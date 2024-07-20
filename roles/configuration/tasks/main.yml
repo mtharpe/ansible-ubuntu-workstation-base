@@ -58,13 +58,6 @@
     owner: root
     group: root
     mode: "0644"
-  register: sshd_config
-
-- name: Restart SSH Service
-  become: true
-  ansible.builtin.service:
-    name: sshd
-    state: restarted
   notify: Restart_SSH
 
 - name: Tmux Configuration
