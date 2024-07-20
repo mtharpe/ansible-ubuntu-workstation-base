@@ -176,3 +176,10 @@
       - ubuntu-web-launchers
       - yelp
     state: absent
+
+- name: Remove unneeded snap packages
+  become: true
+  community.general.snap:
+    name:
+      - firefox
+    state: absent
