@@ -1,11 +1,13 @@
 ---
 # Add apt repositories
 - name: Apt Key for Google Chrome
+  become: true
   ansible.builtin.apt_key:
     url: https://dl.google.com/linux/linux_signing_key.pub
     state: present
 
 - name: Google Chrome Stable Repo
+  become: true
   ansible.builtin.apt_repository:
     repo: deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main
     validate_certs: false
@@ -13,11 +15,13 @@
     update_cache: true
 
 - name: Apt Key for Docker
+  become: true
   ansible.builtin.apt_key:
     url: https://download.docker.com/linux/ubuntu/gpg
     state: present
 
 - name: Docker Repo
+  become: true
   ansible.builtin.apt_repository:
     repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu focal stable
     validate_certs: false
@@ -25,11 +29,13 @@
     update_cache: true
 
 - name: Apt Key for HashiCorp
+  become: true
   ansible.builtin.apt_key:
     url: https://apt.releases.hashicorp.com/gpg
     state: present
 
 - name: HashiCorp Repo
+  become: true
   ansible.builtin.apt_repository:
     repo: deb [arch=amd64] https://apt.releases.hashicorp.com focal main
     validate_certs: false
@@ -37,11 +43,13 @@
     update_cache: true
 
 - name: 1password Apt Key
+  become: true
   ansible.builtin.apt_key:
     url: https://downloads.1password.com/linux/keys/1password.asc
     state: present
 
 - name: 1password Repo
+  become: true
   ansible.builtin.apt_repository:
     repo: deb [arch=amd64] https://downloads.1password.com/linux/debian/amd64 stable main
     validate_certs: false
@@ -49,11 +57,13 @@
     update_cache: true
 
 - name: Apt Key for Boundary
+  become: true
   ansible.builtin.apt_key:
     url: https://apt.releases.hashicorp.com/gpg
     state: present
 
 - name: Boundary Repo
+  become: true
   ansible.builtin.apt_repository:
     repo: deb [arch=amd64] https://apt.releases.hashicorp.com focal main
     validate_certs: false
@@ -61,11 +71,13 @@
     update_cache: true
 
 - name: VSCode Apt Key
+  become: true
   ansible.builtin.apt_key:
     url: https://packages.microsoft.com/keys/microsoft.asc
     state: present
 
 - name: VSCode Repo
+  become: true
   ansible.builtin.apt_repository:
     repo: deb [arch=amd64] http://packages.microsoft.com/repos/code stable main
     validate_certs: false
@@ -74,6 +86,7 @@
 
 # Install commom Ubuntu Packages
 - name: Install Packages
+  become: true
   ansible.builtin.package:
     name:
       - automake
@@ -134,6 +147,7 @@
     state: present
 
 - name: Install Snap Packages
+  become: true
   community.general.snap:
     name:
       - alacritty
@@ -146,6 +160,7 @@
 
 # Remove unneeded packages
 - name: Remove Packages
+  become: true
   ansible.builtin.package:
     name:
       - firefox

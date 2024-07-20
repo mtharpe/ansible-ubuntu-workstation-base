@@ -2,38 +2,47 @@
 # Setup Configuration Files
 
 - name: Bash Profile Configuration
-  ansible.builtin.template:
-    src: files/bash_profile.j2
-    dest: /home/{{ ansible_user }}/bash_profile
-    owner: "{{ ansible_user }}"
-    group: "{{ ansible_user }}"
+  ansible.builtin.copy:
+    src: files/bash_profile
+    dest: /home/{{ ansible_user_id }}/.bash_profile
+    owner: "{{ ansible_user_id }}"
+    group: "{{ ansible_user_id }}"
     mode: "0644"
 
 - name: Bash Aliases Configuration
-  ansible.builtin.template:
-    src: files/bash_aliases.j2
-    dest: /home/{{ ansible_user }}/bash_aliases
-    owner: "{{ ansible_user }}"
-    group: "{{ ansible_user }}"
+  ansible.builtin.copy:
+    src: files/bash_aliases
+    dest: /home/{{ ansible_user_id }}/bash_aliases
+    owner: "{{ ansible_user_id }}"
+    group: "{{ ansible_user_id }}"
     mode: "0644"
 
 - name: Bashrc Configuration
-  ansible.builtin.template:
-    src: files/bashrc.j2
-    dest: /home/{{ ansible_user }}/.bashrc
-    owner: "{{ ansible_user }}"
-    group: "{{ ansible_user }}"
+  ansible.builtin.copy:
+    src: files/bashrc
+    dest: /home/{{ ansible_user_id }}/.bashrc
+    owner: "{{ ansible_user_id }}"
+    group: "{{ ansible_user_id }}"
     mode: "0644"
 
+- name: Create Alacritty Directory
+  ansible.builtin.file:
+    path: /home/{{ ansible_user_id }}/.config/alacritty
+    state: directory
+    owner: "{{ ansible_user_id }}"
+    group: "{{ ansible_user_id }}"
+    mode: "0755"
+
 - name: Alacritty Configuration
-  ansible.builtin.template:
-    src: files/alacritty.yml.j2
-    dest: /home/{{ ansible_user }}/.config/alacritty/alacritty.yml
-    owner: "{{ ansible_user }}"
-    group: "{{ ansible_user }}"
+  ansible.builtin.copy:
+    src: files/alacritty.yml
+    dest: /home/{{ ansible_user_id }}/.config/alacritty/alacritty.yml
+    owner: "{{ ansible_user_id }}"
+    group: "{{ ansible_user_id }}"
     mode: "0644"
 
 - name: Fail2Ban Configuration
+  become: true
   ansible.builtin.template:
     src: files/jail.local.j2
     dest: /etc/fail2ban/jail.local
@@ -42,17 +51,26 @@
     mode: "0644"
 
 - name: SSH Configuration
+  become: true
   ansible.builtin.template:
     src: files/sshd_config.j2
     dest: /etc/ssh/sshd_config
     owner: root
     group: root
     mode: "0644"
+  register: sshd_config
+
+- name: Restart SSH Service
+  become: true
+  ansible.builtin.service:
+    name: sshd
+    state: restarted
+  when: sshd_config.changed
 
 - name: Tmux Configuration
   ansible.builtin.template:
-    src: files/tmux.conf.j2
-    dest: /home/{{ ansible_user }}/.tmux.conf
-    owner: "{{ ansible_user }}"
-    group: "{{ ansible_user }}"
+    src: files/tmux.j2
+    dest: /home/{{ ansible_user_id }}/.tmux.conf
+    owner: "{{ ansible_user_id }}"
+    group: "{{ ansible_user_id }}"
     mode: "0644"
