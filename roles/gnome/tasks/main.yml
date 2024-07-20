@@ -21,7 +21,7 @@
     mode: "0775"
     recurse: true
 
-- name: Get Gnome Profile
+- name: Get Gnome Profile # noqa: partial-become no-changed-when
   ansible.builtin.command: gsettings get org.gnome.Terminal.ProfilesList default  | awk -F \' '{print $2}'
   become_user: "{{ local_user }}"
   register: profile
@@ -33,7 +33,7 @@
 
 # This has to be done as a command because the dconf-editor module is garbage and cant handle become properly
 
-- name: Setup Gnome Terminal
+- name: Setup Gnome Terminal # noqa: partial-become no-changed-when
   ansible.builtin.command: "{{ item }}"
   become_user: "{{ ansible_user_id }}"
   loop:
