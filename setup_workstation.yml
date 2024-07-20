@@ -1,9 +1,8 @@
 ---
 - name: Setup Workstation
   hosts: workstation
-  become: true
   gather_facts: true
 
   roles:
     - common
-    # - configuration
+    - configuration

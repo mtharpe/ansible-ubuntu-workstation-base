@@ -1,5 +1,3 @@
-# {{ ansible_managed }}
-
 ## Aliases ##              
 #alias ls='ls -h --color'
 alias ls='exa'
