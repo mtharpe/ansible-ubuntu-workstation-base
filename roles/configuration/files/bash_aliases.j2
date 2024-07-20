@@ -1,0 +1,70 @@
+# {{ ansible_managed }}
+
+## Aliases ##              
+#alias ls='ls -h --color'
+alias ls='exa'
+alias tree='exa -T'
+alias c='clear'
+alias grub_update='grub2-mkconfig -o /boot/efi/EFI/fedora/grub.cfg'
+
+# VI/VIM/NEOVIM
+alias vi="nvim"                        
+alias vim="nvim"             
+
+# BAT replacement for cat
+alias cat="bat"
+
+# RG replacement for grep
+alias grep="rg -i"
+alias fgrep="rg -l -i "
+
+# SSH
+alias sum="shasum -a 256 ${1}"
+alias ssh_keygen="ssh-keygen -b 4096 -C `date +%Y-%m-%d` "                                      
+
+# Git
+#alias git_all="find . -name \".git\" -type d | sed 's/\/.git//' |  xargs -P10 -I{} git -C {} pull"
+alias git_all="printf "\\\\n" && find . -maxdepth 4 -type d -name \".git\" -execdir python -c 'import os; from termcolor import colored, cprint; cprint(colored(os.path.abspath(\".\"), \"blue\"))' \; -execdir git pull \;"
+
+# Packer
+
+# Vagrant
+alias vu="vagrant up --provider=virtualbox"
+alias vd="vagrant destroy -f"
+alias vb="vagrant box "
+alias vp="vagrant plugin "
+
+# Terraform
+alias ti="terraform init"
+alias tp="terraform plan"
+alias ta="terraform apply --auto-approve"
+alias td="terraform destroy --auto-approve"
+alias tf_test="terraform init && terraform fmt && terraform validate"
+alias tci='curl --request GET https://app.terraform.io/api/meta/ip-ranges | jq'
+
+# Vault
+alias vault_login="vault login -method=userpass username=${USER}"
+alias vault_start_dev="export VAULT_ADDR=http://127.0.0.1:8200 && VAULT_UI=true vault server -dev -dev-root-token-id='password' && sleep 5 && open http://127.0.0.1:8200"
+
+# Consul
+
+# Nomad
+alias nomad_start_dev="nomad agent -dev"
+
+# Package Managers
+alias dnf='sudo dnf -y '
+alias apt='sudo apt -y '
+alias zypper='sudo zypper -y '
+
+# Google Cloud Compute
+alias gssh="gcloud beta compute ssh "
+
+# Ansible
+alias ansible_lint='ansible-lint -x 301 -x 305 -x 503 -x 106'
+
+# Chef
+alias dokken="KITCHEN_LOCAL_YAML=kitchen.dokken.yml kitchen"
+alias chef_gen_cb='chef generate cookbook $1 -C "${USER}" -m "${USER}@noemail.not" -l apachev2'
+
+# Podman
+alias docker-compose='sudo docker-compose '
