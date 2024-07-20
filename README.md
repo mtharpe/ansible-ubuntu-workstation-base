@@ -1,3 +1,5 @@
+[![ansible-lint](https://github.com/mtharpe/ansible-ubuntu-workstation-base/actions/workflows/main.yml/badge.svg)](https://github.com/mtharpe/ansible-ubuntu-workstation-base/actions/workflows/main.yml)
+
 # Ansible Ubuntu Workstation Base
 
 This Ansible playbook is designed to set up a base configuration for an Ubuntu workstation. It automates the installation and configuration of common software and tools that are typically used in a development environment.
