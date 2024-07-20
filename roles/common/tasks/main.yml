@@ -93,6 +93,8 @@
       - awscli
       - bat
       - boundary
+      - build-essential
+      - cargo
       - cmake
       - code
       - consul
@@ -113,6 +115,7 @@
       - iotop
       - jq
       - letsencrypt
+      - libfontconfig-dev
       - lshw
       - lsscsi
       - mlocate
@@ -124,6 +127,7 @@
       - npm
       - owncloud-client
       - packer
+      - pkg-config
       - python3-psutil
       - python3-termcolor
       - remmina
@@ -158,6 +162,32 @@
   ansible.builtin.apt:
     deb: /tmp/zoom_amd64.deb
     state: present
+
+- name: Check if Alacritty is installed
+  ansible.builtin.stat:
+    path: /usr/local/bin/alacritty
+  register: alacritty_check
+
+- name: Install Alacritty
+  ansible.builtin.command:
+    cmd: cargo install alacritty
+    creates: /home/{{ ansible_user_id }}/.cargo/bin/alacritty
+  when: alacritty_check.stat.exists is not defined or not alacritty_check.stat.exists
+  register: alacritty_install
+
+- name: Move Alacritty to /usr/local/bin
+  become: true
+  ansible.builtin.command:
+    cmd: mv /home/{{ ansible_user_id }}/.cargo/bin/alacritty /usr/local/bin/alacritty
+    creates: /usr/local/bin/alacritty
+  when: alacritty_check.stat.exists is not defined or not alacritty_check.stat.exists
+
+- name: Cleanup Alacritty
+  become: true
+  ansible.builtin.command:
+    cmd: rm -rf /home/{{ ansible_user_id }}/.cargo/bin/alacritty
+  when: alacritty_check.stat.exists is not defined or not alacritty_check.stat.exists
+  changed_when: alacritty_check.stat.exists is defined and alacritty_check.stat.exists
 
 # Remove unneeded packages
 - name: Remove Packages
