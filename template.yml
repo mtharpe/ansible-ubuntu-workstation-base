@@ -1,0 +1,58 @@
+---
+- hosts: localhost
+  connection: local
+  gather_facts: false
+  become: false
+
+  tasks:
+  - name: Create folder structure
+    ansible.builtin.file:
+      path: "{{ item }}"
+      state: directory
+      mode: 0755
+    loop:
+      - ./files
+      - ./group_vars
+      - ./host_vars
+      - ./inventory
+      - ./roles/role1/defaults
+      - ./roles/role1/files
+      - ./roles/role1/handlers
+      - ./roles/role1/meta
+      - ./roles/role1/tasks
+      - ./roles/role1/tests
+      - ./roles/role1/vars
+      - ./templates
+      - ./vault
+  
+  - name: Create default config
+    ansible.builtin.copy:
+      dest: ./ansible.cfg
+      content: |
+        [defaults]
+        # Default inventory
+        inventory = ./inventory/
+        # Add timer to Ansible tasks
+        callback_enabled = ansible.posix.profile_tasks
+        # Use the YAML callback plugin.
+        stdout_callback = yaml
+        # Use the stdout_callback when running ad-hoc commands.
+        bin_ansible_callbacks = True
+        [persistent_connection]
+        network_cli_retries = 5
+  
+  - name: Create default role content
+    ansible.builtin.copy:
+      dest: "{{ item }}"
+      content: |
+        ---
+        # Content below
+    loop:
+      - ./roles/role1/defaults/main.yml
+      - ./roles/role1/files/main.yml
+      - ./roles/role1/handlers/main.yml
+      - ./roles/role1/meta/main.yml
+      - ./roles/role1/tasks/main.yml
+      - ./roles/role1/tests/main.yml
+      - ./roles/role1/vars/main.yml
+      - ./requirements.yml
