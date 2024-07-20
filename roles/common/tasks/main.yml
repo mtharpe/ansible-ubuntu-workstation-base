@@ -85,7 +85,7 @@
     update_cache: true
 
 # Install commom Ubuntu Packages
-- name: Install Packages
+- name: Install Common System Packages
   become: true
   ansible.builtin.package:
     name:
@@ -129,7 +129,6 @@
       - remmina
       - ripgrep
       - slack
-      - snapd
       - speedtest-cli
       - ssh
       - sysstat
@@ -146,16 +145,18 @@
       - waypoint
     state: present
 
-- name: Install Snap Packages
+# Install Zoom deb package
+- name: Fetch Zoom
   become: true
-  community.general.snap:
-    name:
-      - alacritty
-      - discord
-      - vlc
-      - zoom-client
-    classic: true
-    dangerous: true
+  ansible.builtin.get_url:
+    url: https://zoom.us/client/latest/zoom_amd64.deb
+    dest: /tmp/zoom_amd64.deb
+    mode: '0644'
+
+- name: Install Zoom Deb Packages
+  become: true
+  ansible.builtin.apt:
+    deb: /tmp/zoom_amd64.deb
     state: present
 
 # Remove unneeded packages
@@ -172,14 +173,8 @@
       - rhythmbox
       - shotwell
       - simple-scan
+      - snapd
       - thunderbird
       - ubuntu-web-launchers
       - yelp
-    state: absent
-
-- name: Remove unneeded snap packages
-  become: true
-  community.general.snap:
-    name:
-      - firefox
     state: absent

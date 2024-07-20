@@ -16,23 +16,22 @@ Vagrant.configure(2) do |config|
   config.hostmanager.ignore_private_ip = false
   config.hostmanager.include_offline = true
 
+
   config.vm.provider 'virtualbox' do |v|
     v.gui = false
     v.name = MACHINE_NAME
     v.cpus = 1
     v.memory = 4096
     v.linked_clone = false
-    config.vm.box_check_update = true
-    v.check_guest_additions = true
+    v.check_guest_additions = false
   end
-  
-  config.vm.provision 'shell', inline: <<-SHELL
-    sudo apt-get update
-    sudo apt-get install -y software-properties-common ubuntu-gnome-desktop
-  SHELL
+
+  if Vagrant.has_plugin?("vagrant-vbguest") then
+    config.vbguest.auto_update = false
+  end
 
   config.vm.provision 'ansible_local' do |ansible|
     ansible.playbook = "#{ANSIBLE_PATH}/#{ANSIBLE_PLAYBOOK}"
-    ansible.verbose = true
+    ansible.verbose = false 
   end
 end
