@@ -3,12 +3,6 @@
 
 MACHINE_NAME = 'ubuntu-22'.freeze
 
-# Config engine (Ansible)
-CONFIG_ENGINE = 'ansible'.freeze
-
-# Ansible global controls
-ANSIBLE_SETUP_FILE = 'setup_workstation.yml'.freeze
-
 Vagrant.configure(2) do |config|
   config.vm.box = 'generic/ubuntu2204'
   config.vm.synced_folder '.', '/vagrant', disabled: false
@@ -21,7 +15,7 @@ Vagrant.configure(2) do |config|
   config.hostmanager.include_offline = true
 
   config.vm.provider 'virtualbox' do |v|
-    v.gui = true
+    v.gui = false
     v.name = MACHINE_NAME
     v.cpus = 1
     v.memory = 4096
@@ -30,7 +24,6 @@ Vagrant.configure(2) do |config|
     v.check_guest_additions = false
     v.customize ['modifyvm', :id, '--clipboard', 'bidirectional']
     v.customize ['modifyvm', :id, '--draganddrop', 'bidirectional']
-    # v.customize ['setextradata', :id, 'VBoxInternal2/SharedFoldersEnableSymlinksCreate/v-root', '1']
   end
   
   config.vm.provision 'shell', inline: <<-SHELL
@@ -39,11 +32,6 @@ Vagrant.configure(2) do |config|
     sudo apt-add-repository --yes --update ppa:ansible/ansible
     sudo apt-get update
     sudo apt-get install -y ubuntu-gnome-desktop ansible
+    ansible-playbook /vagrant/setup_workstation.yml
   SHELL
-
-  if CONFIG_ENGINE == 'ansible'
-    config.vm.provision 'ansible' do |ansible|
-      ansible.playbook = "/vagrant/#{ANSIBLE_SETUP_FILE} "
-    end
-  end
 end

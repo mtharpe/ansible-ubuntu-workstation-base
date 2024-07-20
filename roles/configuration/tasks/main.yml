@@ -65,7 +65,7 @@
   ansible.builtin.service:
     name: sshd
     state: restarted
-  when: sshd_config.changed
+  notify: Restart SSH
 
 - name: Tmux Configuration
   ansible.builtin.template:
