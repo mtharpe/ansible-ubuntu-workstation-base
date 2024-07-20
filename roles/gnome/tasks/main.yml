@@ -1,1 +1,48 @@
 ---
+- name: Get Gnome Shell extension info
+  ansible.builtin.uri:
+    url: https://extensions.gnome.org/extension-info/?pk={{ item }}&shell_version={{ gnome_shell_version }}
+    return_content: true
+  loop: "{{ gnome_extension_ids }}"
+  register: r_gnome_extension_info
+  ignore_errors: true
+
+- name: Include install_extension.yml task
+  ansible.builtin.include_tasks: install_extension.yml
+  vars:
+    gnome_extension_info: "{{ item.json }}"
+  loop: "{{ r_gnome_extension_info.results }}"
+  when: item.status == 200
+
+- name: Set Permissions for all extensions
+  ansible.builtin.file:
+    dest: "/home/{{ local_user }}/.local/share/gnome-shell/extensions"
+    group: "{{ local_user }}"
+    mode: "0775"
+    recurse: true
+
+- name: Get Gnome Profile
+  ansible.builtin.command: gsettings get org.gnome.Terminal.ProfilesList default  | awk -F \' '{print $2}'
+  become_user: "{{ local_user }}"
+  register: profile
+
+- name: Print default profile
+  ansible.builtin.debug:
+    msg: Default Terminal Profile is {{ profile.stdout }}
+
+
+# This has to be done as a command because the dconf-editor module is garbage and cant handle become properly
+
+- name: Setup Gnome Terminal
+  ansible.builtin.command: "{{ item }}"
+  become_user: "{{ ansible_user_id }}"
+  loop:
+    - "gsettings set org.gnome.Terminal.Legacy.Profile:/org/gnome/terminal/legacy/profiles:/:{{ profile.stdout }}/ visible-name Default"
+    - "gsettings set org.gnome.Terminal.Legacy.Profile:/org/gnome/terminal/legacy/profiles:/:{{ profile.stdout }}/ use-system-font false"
+    - "gsettings set org.gnome.Terminal.Legacy.Profile:/org/gnome/terminal/legacy/profiles:/:{{ profile.stdout }}/ font 'Monospace 14'"
+    - "gsettings set org.gnome.Terminal.Legacy.Profile:/org/gnome/terminal/legacy/profiles:/:{{ profile.stdout }}/ cell-height-scale '1.2'"
+    - "gsettings set org.gnome.Terminal.Legacy.Profile:/org/gnome/terminal/legacy/profiles:/:{{ profile.stdout }}/ audible-bell false"
+    - "gsettings set org.gnome.Terminal.Legacy.Profile:/org/gnome/terminal/legacy/profiles:/:{{ profile.stdout }}/ scrollback-unlimited false"
+    - "gsettings set org.gnome.Terminal.Legacy.Profile:/org/gnome/terminal/legacy/profiles:/:{{ profile.stdout }}/ scrollbar-policy never"
+    - "gsettings set org.gnome.Terminal.Legacy.Profile:/org/gnome/terminal/legacy/profiles:/:{{ profile.stdout }}/ use-custom-command true"
+    - "gsettings set org.gnome.Terminal.Legacy.Profile:/org/gnome/terminal/legacy/profiles:/:{{ profile.stdout }}/ custom-command /usr/bin/tmux"
