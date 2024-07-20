@@ -1,14 +1,7 @@
 ---
 # Ansible Galaxy requirements file
 
-- src: geerlingguy.tmux
-  version: 2.7.0
-- src: geerlingguy.ansible
-  version: 4.10.0
-- src: geerlingguy.git
-  version: 4.3.0
-- src: geerlingguy.docker
-  version: 4.8.0
-- src: geerlingguy.pip
-  version: 3.0.0
-  
+collections:
+  - community.general
+  - shipilovds.workstation
+
