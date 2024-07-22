@@ -1,4 +1,4 @@
-[![ansible-lint](https://github.com/mtharpe/ansible-ubuntu-workstation-base/actions/workflows/main.yml/badge.svg)](https://github.com/mtharpe/ansible-ubuntu-workstation-base/actions/workflows/main.yml)
+[![CircleCI](https://dl.circleci.com/status-badge/img/gh/mtharpe/ansible-fedora-workstation-base/tree/main.svg?style=svg)](https://dl.circleci.com/status-badge/redirect/gh/mtharpe/ansible-fedora-workstation-base/tree/main)
 
 # Ansible Ubuntu Workstation Base
 
