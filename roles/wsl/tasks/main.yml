@@ -5,7 +5,6 @@
   ansible.builtin.package:
     name:
       - automake
-      - awscli
       - bat
       - build-essential
       - cargo
@@ -13,9 +12,7 @@
       - direnv
       - docker-compose
       - docker.io
-      - exa
       - fail2ban
-      - ffmpeg
       - htop
       - iotop
       - jq
@@ -23,7 +20,6 @@
       - libfontconfig-dev
       - lshw
       - lsscsi
-      - mlocate
       - neovim
       - ngrep
       - nmon
@@ -36,10 +32,5 @@
       - speedtest-cli
       - ssh
       - sysstat
-      - tmux
       - unzip
-      - vagrant
-      - vagrant-libvirt
-      - virtualbox
-      - vlc
     state: present
