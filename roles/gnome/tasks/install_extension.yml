@@ -1,5 +1,5 @@
 ---
-- name: Check if Gnome Shell extension is already installed - {{ gnome_extension_info.name }}
+- name: Check if Gnome Shell extension is already installed for {{ gnome_extension_info.name }}
   ansible.builtin.stat:
     path: "/home/{{ local_user }}/.local/share/gnome-shell/extensions/{{ gnome_extension_info.uuid }}/metadata.json"
   register: gnome_extension_check_existing
@@ -12,15 +12,15 @@
   changed_when: false
   when: not gnome_extension_check_existing.stat.exists
 
-- name: Download and Install Gnome Shell extension - {{ gnome_extension_info.name }} # noqa: partial-become no-changed-when key-order
+- name: Download and Install Gnome Shell extension for {{ gnome_extension_info.name }} # noqa: partial-become no-changed-when key-order
   block:
-    - name: Download Gnome Shell extension - {{ gnome_extension_info.name }} # noqa: risky-file-permissions
+    - name: Download Gnome Shell extension for {{ gnome_extension_info.name }} # noqa: risky-file-permissions
       ansible.builtin.get_url:
         url: https://extensions.gnome.org{{ gnome_extension_info.download_url }}
         dest: "{{ gnome_extension_download_dir.path }}/{{ gnome_extension_info.uuid }}.zip"
       register: gnome_extension_download
 
-    - name: Create install directory - {{ gnome_extension_info.name }}
+    - name: Create install directory for {{ gnome_extension_info.name }}
       ansible.builtin.file:
         path: "/home/{{ local_user }}/.local/share/gnome-shell/extensions/{{ gnome_extension_info.uuid }}"
         state: directory
@@ -28,7 +28,7 @@
         group: "{{ local_user }}"
         mode: "0755"
 
-    - name: Install Gnome Shell extension - {{ gnome_extension_info.name }}
+    - name: Install Gnome Shell extension for {{ gnome_extension_info.name }}
       ansible.builtin.unarchive:
         src: "{{ gnome_extension_download.dest }}"
         dest: "/home/{{ local_user }}/.local/share/gnome-shell/extensions/{{ gnome_extension_info.uuid }}"
@@ -49,7 +49,7 @@
       changed_when: false
       failed_when: false
 
-    - name: Enable Gnome Shell extension via tool - {{ gnome_extension_info.name }} # noqa: partial-become no-changed-when
+    - name: Enable Gnome Shell extension via tool for {{ gnome_extension_info.name }} # noqa: partial-become no-changed-when
       ansible.builtin.command: gnome-shell-extension-tool --enable-extension {{ gnome_extension_info.uuid }}
       become: true
       become_user: "{{ local_user }}"
@@ -57,7 +57,7 @@
         - gnome_extension_info.uuid not in gnome_enabled_extensions.stdout
         - gnome_extension_tool.rc == 0
 
-    - name: Enable Gnome Shell extension via gsettings fallback - {{ gnome_extension_info.name }} # noqa: partial-become no-changed-when
+    - name: Enable Gnome Shell extension via gsettings fallback for {{ gnome_extension_info.name }} # noqa: partial-become no-changed-when
       ansible.builtin.shell: |
         python3 - <<'PY'
         import ast
