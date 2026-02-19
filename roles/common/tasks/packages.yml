@@ -1,0 +1,161 @@
+---
+- name: Install base packages
+  ansible.builtin.apt:
+    name:
+      - 1password
+      - ansible
+      - ansible-lint
+      - arpwatch
+      - autoconf
+      - autofs
+      - automake
+      - bat
+      - build-essential
+      - cmake
+      - curl
+      - dconf-editor
+      - direnv
+      - fail2ban
+      - ffmpeg
+      - gh
+      - git
+      - gnome-extensions-app
+      - gnome-tweaks
+      - golang
+      - htop
+      - iotop
+      - jq
+      - lshw
+      - lsscsi
+      - nfs-common
+      - ngrep
+      - nmap
+      - nmon
+      - npm
+      - python3-psutil
+      - python3-pip
+      - python3-termcolor
+      - ripgrep
+      - speedtest-cli
+      - sysstat
+      - tmux
+      - transmission
+      - ufw
+      - unzip
+      - util-linux
+      - neovim
+      - terraform
+      - vault
+      - consul
+      - nomad
+      - packer
+      - vlc
+      - alacritty
+      - nextcloud-desktop
+    state: present
+    update_cache: true
+  become: true
+
+- name: Install fastfetch when available
+  ansible.builtin.apt:
+    name: fastfetch
+    state: present
+    update_cache: true
+  become: true
+  failed_when: false
+
+- name: Install extra fonts
+  ansible.builtin.apt:
+    name:
+      - fonts-dejavu
+      - fonts-inconsolata
+      - fonts-liberation
+      - fonts-terminus
+      - fonts-anonymous-pro
+      - fonts-source-code-pro
+    state: present
+    update_cache: true
+  become: true
+
+- name: Install OpenH264 codecs when available
+  ansible.builtin.apt:
+    name:
+      - gstreamer1.0-openh264
+      - libopenh264-6
+      - mozilla-openh264
+    state: present
+    update_cache: true
+  become: true
+  failed_when: false
+
+- name: Install molecule via pip
+  ansible.builtin.pip:
+    name: molecule
+    state: present
+  become: true
+  when: install_packager | default(false)
+
+- name: Install molecule-podman via pip
+  ansible.builtin.pip:
+    name: molecule-podman
+    state: present
+  become: true
+  when: install_packager | default(false)
+
+- name: Remove unwanted packages
+  ansible.builtin.apt:
+    name:
+      - firefox
+      - gnome-calendar
+      - gnome-contacts
+      - gnome-maps
+      - rhythmbox
+      - totem
+      - gnome-tour
+      - gnome-abrt
+      - gnome-logs
+    state: absent
+  become: true
+  failed_when: false
+
+- name: Check if FiraCode Nerd Font is already installed
+  ansible.builtin.command:
+    cmd: fc-list | grep -i "Fira Code"
+  register: common_firacode_fonts
+  failed_when: false
+  changed_when: false
+  when: install_nerd_font | default(false)
+
+- name: Download FiraCode Nerd Font zip
+  ansible.builtin.get_url:
+    url: https://github.com/ryanoasis/nerd-fonts/releases/latest/download/FiraCode.zip
+    dest: /tmp/FiraCode.zip
+    mode: "0644"
+    force: true
+  when:
+    - install_nerd_font | default(false)
+    - common_firacode_fonts.rc != 0
+
+- name: Create nerd fonts directory
+  ansible.builtin.file:
+    path: /usr/local/share/fonts/nerdfonts
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+  become: true
+  when: install_nerd_font | default(false)
+
+- name: Unarchive FiraCode Nerd Font
+  ansible.builtin.unarchive:
+    src: /tmp/FiraCode.zip
+    dest: /usr/local/share/fonts/nerdfonts
+    remote_src: true
+  become: true
+  when: install_nerd_font | default(false)
+
+- name: Refresh font cache
+  ansible.builtin.command:
+    cmd: fc-cache -f -v
+  become: true
+  when: install_nerd_font | default(false)

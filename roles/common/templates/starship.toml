@@ -1,0 +1,11 @@
+add_newline = false
+
+[character]
+success_symbol = ">"
+error_symbol = "x"
+
+[git_branch]
+symbol = "git:"
+
+[git_status]
+style = "red"

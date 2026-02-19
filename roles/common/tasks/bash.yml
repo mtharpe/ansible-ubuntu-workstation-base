@@ -1,0 +1,44 @@
+---
+- name: Template bashrc
+  ansible.builtin.copy:
+    src: templates/bashrc
+    dest: /home/{{ local_user }}/.bashrc
+    owner: "{{ local_user }}"
+    group: "{{ local_user }}"
+    mode: "0644"
+  become: true
+
+- name: Template bash_profile
+  ansible.builtin.copy:
+    src: templates/bash_profile
+    dest: /home/{{ local_user }}/.bash_profile
+    owner: "{{ local_user }}"
+    group: "{{ local_user }}"
+    mode: "0644"
+  become: true
+
+- name: Template bash_aliases
+  ansible.builtin.copy:
+    src: templates/bash_aliases
+    dest: /home/{{ local_user }}/.bash_aliases
+    owner: "{{ local_user }}"
+    group: "{{ local_user }}"
+    mode: "0644"
+  become: true
+
+- name: Template tmux.conf
+  ansible.builtin.copy:
+    src: templates/tmux.conf
+    dest: /home/{{ local_user }}/.tmux.conf
+    owner: "{{ local_user }}"
+    group: "{{ local_user }}"
+    mode: "0644"
+  become: true
+
+- name: Install Tmux TPM
+  ansible.builtin.git:
+    repo: https://github.com/tmux-plugins/tpm
+    dest: /home/{{ local_user }}/.tmux/plugins/tpm
+    version: master
+  become: true
+  become_user: "{{ local_user }}"

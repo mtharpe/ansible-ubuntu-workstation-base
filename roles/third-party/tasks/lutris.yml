@@ -1,0 +1,30 @@
+---
+- name: Add Lutris PPA
+  ansible.builtin.apt_repository:
+    repo: ppa:lutris-team/lutris
+    state: present
+    update_cache: true
+  become: true
+
+- name: Install Wine
+  ansible.builtin.apt:
+    name: wine
+    state: present
+    update_cache: true
+  become: true
+
+- name: Install Lutris
+  ansible.builtin.apt:
+    name: lutris
+    state: present
+    update_cache: true
+  become: true
+
+- name: Install Vulkan Loader packages
+  ansible.builtin.apt:
+    name:
+      - libvulkan1
+      - vulkan-utils
+    state: present
+    update_cache: true
+  become: true

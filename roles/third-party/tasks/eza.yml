@@ -1,0 +1,39 @@
+---
+- name: Download prebuilt eza tarball
+  ansible.builtin.get_url:
+    url: https://github.com/eza-community/eza/releases/latest/download/eza_x86_64-unknown-linux-gnu.tar.gz
+    dest: /tmp/eza.tar.gz
+    mode: "0644"
+    force: true
+
+- name: Ensure eza unpack directory exists
+  ansible.builtin.file:
+    path: /tmp/eza_unpack
+    state: directory
+    mode: "0755"
+    owner: root
+    group: root
+  become: true
+
+- name: Extract eza tarball
+  ansible.builtin.unarchive:
+    src: /tmp/eza.tar.gz
+    dest: /tmp/eza_unpack
+    remote_src: true
+
+- name: Move eza binary to /usr/local/bin
+  ansible.builtin.copy:
+    src: /tmp/eza_unpack/eza
+    dest: /usr/local/bin/eza
+    remote_src: true
+    owner: root
+    group: root
+    mode: "0755"
+  become: true
+
+- name: Create symlink exa -> eza if exa not present
+  ansible.builtin.file:
+    src: /usr/local/bin/eza
+    dest: /usr/local/bin/exa
+    state: link
+  become: true

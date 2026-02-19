@@ -1,8 +1,13 @@
 ---
 - name: Setup Workstation
   hosts: all
+  become: true
   gather_facts: true
+
+  vars_files:
+    - vars/vars.yml
 
   roles:
     - common
-    - configuration
+    - third-party
+    - gnome

@@ -1,0 +1,43 @@
+---
+
+# User
+local_user: tharpem
+local_user_email: mtharpe@noemail.not
+local_user_passwordless_sudo: true
+
+# Services
+enable_fail2ban: true
+enable_sshd: false
+
+# Extras
+install_packager: true
+
+# Third party
+install_chrome: true
+install_slack: true
+install_spotify: false
+install_vscode: true
+install_zoom: true
+install_lutris: false
+install_steam: false
+install_docker: false
+install_gcloud: false
+install_chef: false
+install_autocpu: false
+install_alacritty: true
+install_bash: false
+install_fish: true
+install_starship: false
+install_nerd_font: true
+install_eza: true
+install_gnome_extensions: false
+
+# Firewall (mapped to ufw on Ubuntu)
+firewalld_allowed_services:
+  - ssh
+  - mdns
+  - dhcpv6-client
+firewalld_allowed_ports: []
+
+# Python
+ansible_python_interpreter: /usr/bin/python3

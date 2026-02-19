@@ -1,0 +1,36 @@
+---
+- name: Remove legacy Docker packages
+  ansible.builtin.apt:
+    name:
+      - docker
+      - docker.io
+      - docker-engine
+      - docker-ce
+      - docker-ce-cli
+      - containerd
+      - runc
+    state: absent
+  become: true
+  failed_when: false
+
+- name: Install Docker packages
+  ansible.builtin.apt:
+    name:
+      - docker.io
+      - docker-compose
+    state: present
+    update_cache: true
+  become: true
+
+- name: Ensure docker group exists
+  ansible.builtin.group:
+    name: docker
+    state: present
+  become: true
+
+- name: Add user to docker group
+  ansible.builtin.user:
+    name: "{{ local_user }}"
+    groups: [docker]
+    append: true
+  become: true

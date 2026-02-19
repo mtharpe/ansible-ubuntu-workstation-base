@@ -10,7 +10,7 @@ if [ ! -f "/etc/sudoers/${USER}" ]; then
 fi
 
 if [ -z "$ansible" ]; then
- sudo dnf install ansible -y
+ sudo apt install ansible -y
 fi
 
 until ansible-playbook --extra-vars "local_user=${USER}" setup_workstation.yml; do

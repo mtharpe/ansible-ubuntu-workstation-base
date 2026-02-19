@@ -1,0 +1,16 @@
+---
+- name: Start and enable ssh
+  ansible.builtin.service:
+    name: ssh
+    state: started
+    enabled: true
+  when: enable_sshd | default(false)
+  become: true
+
+- name: Start and enable fail2ban
+  ansible.builtin.service:
+    name: fail2ban
+    state: started
+    enabled: true
+  when: enable_fail2ban | default(false)
+  become: true

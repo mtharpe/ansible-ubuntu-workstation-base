@@ -1,0 +1,74 @@
+---
+- name: Ensure ufw is installed
+  ansible.builtin.apt:
+    name: ufw
+    state: present
+    update_cache: true
+  become: true
+
+- name: Ensure ufw is enabled
+  community.general.ufw:
+    state: enabled
+  become: true
+
+- name: Allow common services in ufw
+  community.general.ufw:
+    rule: allow
+    name: "{{ item }}"
+  loop: "{{ firewalld_allowed_services | default(['ssh', 'mdns', 'dhcpv6-client']) }}"
+  become: true
+
+- name: Allow configured ports in ufw
+  community.general.ufw:
+    rule: allow
+    port: "{{ item }}"
+    proto: tcp
+  loop: "{{ firewalld_allowed_ports | default([]) }}"
+  when: firewalld_allowed_ports is defined and firewalld_allowed_ports | length > 0
+  become: true
+
+- name: Ensure .gitconfig exists in user home directory
+  ansible.builtin.file:
+    path: "/home/{{ local_user }}/.gitconfig"
+    state: touch
+    owner: "{{ local_user }}"
+    group: "{{ local_user }}"
+    mode: "0644"
+    modification_time: preserve
+    access_time: preserve
+  become: true
+
+- name: Configure git user.name
+  community.general.git_config:
+    scope: global
+    name: user.name
+    value: "Michael Tharpe"
+  become: true
+  become_user: "{{ local_user }}"
+
+- name: Configure git user.email
+  community.general.git_config:
+    scope: global
+    name: user.email
+    value: "{{ local_user_email }}"
+  become: true
+  become_user: "{{ local_user }}"
+
+- name: Enable net.ipv4.ip_forward
+  ansible.posix.sysctl:
+    name: net.ipv4.ip_forward
+    value: "1"
+    sysctl_set: true
+    state: present
+    reload: true
+  become: true
+
+- name: Set fs.inotify.max_user_watches
+  ansible.posix.sysctl:
+    name: fs.inotify.max_user_watches
+    value: "524288"
+    sysctl_set: true
+    state: present
+    reload: true
+  when: install_vscode | default(false)
+  become: true

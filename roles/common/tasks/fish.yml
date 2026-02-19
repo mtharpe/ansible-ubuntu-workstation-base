@@ -1,0 +1,147 @@
+---
+- name: Install fish
+  ansible.builtin.apt:
+    name: fish
+    state: present
+    update_cache: true
+  become: true
+
+- name: Ensure fish is listed in /etc/shells
+  ansible.builtin.lineinfile:
+    path: /etc/shells
+    line: /usr/bin/fish
+    create: true
+    mode: "0644"
+    state: present
+  become: true
+
+- name: Set user login shell to fish
+  ansible.builtin.user:
+    name: "{{ local_user }}"
+    shell: /usr/bin/fish
+  become: true
+
+- name: Create fish config directory
+  ansible.builtin.file:
+    path: /home/{{ local_user }}/.config/fish
+    owner: "{{ local_user }}"
+    group: "{{ local_user }}"
+    mode: "0755"
+    state: directory
+  become: true
+
+- name: Template fish config
+  ansible.builtin.copy:
+    src: templates/config.fish
+    dest: /home/{{ local_user }}/.config/fish/config.fish
+    owner: "{{ local_user }}"
+    group: "{{ local_user }}"
+    mode: "0644"
+  become: true
+
+- name: Template system fish config
+  ansible.builtin.copy:
+    src: templates/system.fish
+    dest: /home/{{ local_user }}/.config/fish/system.fish
+    owner: "{{ local_user }}"
+    group: "{{ local_user }}"
+    mode: "0644"
+  become: true
+
+- name: Template tmux.conf
+  ansible.builtin.copy:
+    src: templates/tmux.conf
+    dest: /home/{{ local_user }}/.tmux.conf
+    owner: "{{ local_user }}"
+    group: "{{ local_user }}"
+    mode: "0644"
+  become: true
+
+- name: Install Tmux TPM
+  ansible.builtin.git:
+    repo: https://github.com/tmux-plugins/tpm
+    version: master
+    dest: /home/{{ local_user }}/.tmux/plugins/tpm
+  become: true
+  become_user: "{{ local_user }}"
+
+- name: Download Starship install script
+  ansible.builtin.get_url:
+    url: https://starship.rs/install.sh
+    dest: /tmp/starship_install.sh
+    mode: "0755"
+  when: install_starship | default(false)
+
+- name: Install Starship fish prompt
+  ansible.builtin.shell: sh /tmp/starship_install.sh --yes
+  when: install_starship | default(false)
+
+- name: Template starship config
+  ansible.builtin.copy:
+    src: templates/starship.toml
+    dest: /home/{{ local_user }}/.config/starship.toml
+    owner: "{{ local_user }}"
+    group: "{{ local_user }}"
+    mode: "0644"
+  become: true
+  when: install_starship | default(false)
+
+- name: Copy fish aliases script
+  ansible.builtin.copy:
+    src: templates/fish_aliases.sh
+    dest: /home/{{ local_user }}/fish_aliases.sh
+    owner: "{{ local_user }}"
+    group: "{{ local_user }}"
+    mode: "0755"
+  become: true
+
+- name: Execute fish aliases script
+  ansible.builtin.shell: /home/{{ local_user }}/fish_aliases.sh
+  become: true
+  become_user: "{{ local_user }}"
+  args:
+    executable: /usr/bin/fish
+
+- name: Remove fish aliases script
+  ansible.builtin.file:
+    path: /home/{{ local_user }}/fish_aliases.sh
+    state: absent
+  become: true
+
+- name: Download Fisher installer
+  ansible.builtin.get_url:
+    url: https://raw.githubusercontent.com/jorgebucaran/fisher/main/functions/fisher.fish
+    dest: /tmp/fisher.fish
+    mode: "0644"
+  become: true
+
+- name: Install Fisher (Fish plugin manager)
+  ansible.builtin.command:
+    cmd: /usr/bin/fish -c "source /tmp/fisher.fish; fisher install pure-fish/pure"
+    creates: "/home/{{ local_user }}/.config/fish/functions/fisher.fish"
+  become: true
+  become_user: "{{ local_user }}"
+
+- name: Configure Fish to use Pure Prompt
+  ansible.builtin.blockinfile:
+    path: /home/{{ local_user }}/.config/fish/config.fish
+    create: true
+    owner: "{{ local_user }}"
+    group: "{{ local_user }}"
+    mode: "0644"
+    block: |
+        # --- Configure Pure Prompt ---
+        if status is-interactive
+          if functions -q fisher
+            source (fisher path)/pure.fish
+            set -g pure_show_system_time true
+            set --universal pure_show_numbered_git_indicator true
+            set --universal pure_symbol_git_dirty '*'
+            set --universal pure_symbol_git_stash 'S'
+            set --universal pure_symbol_git_unpulled_commits 'v'
+            set --universal pure_symbol_git_unpushed_commits '^'
+          end
+        end
+        # ---------------------------
+  become: true
+  become_user: "{{ local_user }}"

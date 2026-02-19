@@ -1,0 +1,52 @@
+---
+- name: Setup Chrome
+  ansible.builtin.import_tasks: chrome.yml
+  when: install_chrome | default(false)
+
+- name: Setup Slack
+  ansible.builtin.import_tasks: slack.yml
+  when: install_slack | default(false)
+
+- name: Setup Spotify
+  ansible.builtin.import_tasks: spotify.yml
+  when: install_spotify | default(false)
+
+- name: Setup VSCode
+  ansible.builtin.import_tasks: vscode.yml
+  when: install_vscode | default(false)
+
+- name: Setup Zoom Client
+  ansible.builtin.import_tasks: zoom.yml
+  when: install_zoom | default(false)
+
+- name: Setup Lutris
+  ansible.builtin.import_tasks: lutris.yml
+  when: install_lutris | default(false)
+
+- name: Setup Docker
+  ansible.builtin.import_tasks: docker.yml
+  when: install_docker | default(false)
+
+- name: Setup Google Cloud SDK
+  ansible.builtin.import_tasks: gcloud-sdk.yml
+  when: install_gcloud | default(false)
+
+- name: Setup Steam
+  ansible.builtin.import_tasks: steam.yml
+  when: install_steam | default(false)
+
+- name: Setup Auto-CPUFreq
+  ansible.builtin.import_tasks: auto-cpufreq.yml
+  when: install_autocpu | default(false)
+
+- name: Setup Chef
+  ansible.builtin.import_tasks: chef.yml
+  when: install_chef | default(false)
+
+- name: Setup Alacritty
+  ansible.builtin.import_tasks: alacritty.yml
+  when: install_alacritty | default(false)
+
+- name: Setup eza
+  ansible.builtin.import_tasks: eza.yml
+  when: install_eza | default(false)

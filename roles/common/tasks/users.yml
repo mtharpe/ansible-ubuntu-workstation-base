@@ -1,0 +1,18 @@
+---
+- name: Ensure user exists
+  ansible.builtin.user:
+    name: "{{ local_user }}"
+    home: /home/{{ local_user }}
+    groups: [sudo]
+    append: true
+  become: true
+
+- name: Allow sudo group passwordless access
+  ansible.builtin.lineinfile:
+    dest: /etc/sudoers
+    state: present
+    regexp: ^%sudo
+    line: "%sudo ALL=(ALL) NOPASSWD: ALL"
+    validate: visudo -cf %s
+  become: true
+  when: local_user_passwordless_sudo | default(false)

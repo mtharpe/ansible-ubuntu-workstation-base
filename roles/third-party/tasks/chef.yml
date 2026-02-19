@@ -1,0 +1,25 @@
+---
+- name: Check for Chef Workstation
+  ansible.builtin.stat:
+    path: /opt/chef-workstation/bin/chef
+  register: chef_installed
+
+- name: Download Chef install script
+  ansible.builtin.get_url:
+    url: https://omnitruck.chef.io/install.sh
+    dest: /tmp/chef_install.sh
+    mode: "0755"
+  when: not chef_installed.stat.exists
+  become: true
+
+- name: Install Chef Workstation
+  ansible.builtin.command:
+    cmd: /tmp/chef_install.sh -P chef-workstation
+  when: not chef_installed.stat.exists
+  become: true
+
+- name: Install Test-Kitchen gems
+  ansible.builtin.command: chef gem install kitchen-vagrant kitchen-ansible
+  environment:
+    CHEF_LICENSE: accept
+  become: true

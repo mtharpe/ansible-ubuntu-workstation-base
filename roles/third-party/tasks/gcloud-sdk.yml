@@ -1,0 +1,22 @@
+---
+- name: Apt key for Google Cloud
+  ansible.builtin.apt_key:
+    url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
+    state: present
+  become: true
+
+- name: Google Cloud SDK repo
+  ansible.builtin.apt_repository:
+    repo: deb https://packages.cloud.google.com/apt cloud-sdk main
+    state: present
+    update_cache: true
+  become: true
+
+- name: Install Google Cloud SDK packages
+  ansible.builtin.apt:
+    name:
+      - google-cloud-sdk
+      - kubectl
+    state: present
+    update_cache: true
+  become: true

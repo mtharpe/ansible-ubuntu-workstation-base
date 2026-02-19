@@ -1,0 +1,43 @@
+---
+- name: Ensure apt transport dependencies are installed
+  ansible.builtin.apt:
+    name:
+      - ca-certificates
+      - curl
+      - gnupg
+      - lsb-release
+    state: present
+    update_cache: true
+  become: true
+
+- name: Apt key for HashiCorp
+  ansible.builtin.apt_key:
+    url: https://apt.releases.hashicorp.com/gpg
+    state: present
+  become: true
+
+- name: HashiCorp repo
+  ansible.builtin.apt_repository:
+    repo: deb [arch=amd64] https://apt.releases.hashicorp.com {{ ansible_distribution_release }} main
+    state: present
+    update_cache: true
+  become: true
+
+- name: Apt key for 1Password
+  ansible.builtin.apt_key:
+    url: https://downloads.1password.com/linux/keys/1password.asc
+    state: present
+  become: true
+
+- name: 1Password repo
+  ansible.builtin.apt_repository:
+    repo: deb [arch=amd64] https://downloads.1password.com/linux/debian/amd64 stable main
+    state: present
+    update_cache: true
+  become: true
+
+- name: Refresh apt metadata
+  ansible.builtin.apt:
+    update_cache: true
+  changed_when: false
+  become: true
