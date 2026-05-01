@@ -18,6 +18,7 @@
     state: present
     filename: google-cloud-sdk
     update_cache: true
+    cache_valid_time: 3600
   when: not gcloud_repo.stat.exists
   become: true
   tags: [third_party, gcloud]
@@ -29,5 +30,6 @@
       - kubectl
     state: present
     update_cache: true
+    cache_valid_time: 3600
   become: true
   tags: [third_party, gcloud]

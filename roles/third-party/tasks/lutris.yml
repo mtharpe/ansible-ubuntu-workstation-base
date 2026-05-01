@@ -16,6 +16,7 @@
     repo: ppa:lutris-team/lutris
     state: present
     update_cache: true
+    cache_valid_time: 3600
   become: true
   when: not lutris_installed.stat.exists
   tags: [third_party, lutris]

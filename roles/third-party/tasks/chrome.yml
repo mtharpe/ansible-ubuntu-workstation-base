@@ -18,6 +18,7 @@
     state: present
     filename: google-chrome
     update_cache: true
+    cache_valid_time: 3600
   when: not google_chrome_repo.stat.exists
   become: true
   tags: [third_party, chrome]
@@ -27,6 +28,7 @@
     name: google-chrome-stable
     state: present
     update_cache: true
+    cache_valid_time: 3600
   become: true
   tags: [third_party, chrome]
 

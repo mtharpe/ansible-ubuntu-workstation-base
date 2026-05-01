@@ -19,6 +19,7 @@
     state: present
     filename: spotify
     update_cache: true
+    cache_valid_time: 3600
   when: not ubuntu_spotify_installed.stat.exists
   become: true
   tags: [third_party, spotify]
@@ -28,6 +29,7 @@
     name: spotify-client
     state: present
     update_cache: true
+    cache_valid_time: 3600
   failed_when: false   # Repo occasionally lags new Ubuntu release; tolerate
   become: true
   tags: [third_party, spotify]

@@ -1,15 +1,26 @@
 ---
-# apt speed tuning — drop in BEFORE the first big install so the savings apply.
-# Acquire::Languages "en" stops apt downloading translations for ~100 locales
-# (often the slowest part of `apt update`). Queue-Mode "host" lets apt fetch
-# from multiple mirrors in parallel instead of strictly per-host. Retries
-# saves a re-run when one mirror momentarily flakes.
-- name: Optimize apt for parallel mirrors + English-only translations
+# apt speed + resilience tuning — drop in BEFORE the first big install so
+# the savings apply.
+#
+# Acquire::ForceIPv4 — on networks where IPv6 routing is broken, slow, or
+#   rate-limited, apt would otherwise spend 30s+ timing out v6 connects to
+#   each mirror before falling back to v4. This is the single biggest fix
+#   for "apt update is mysteriously slow on my network".
+# Acquire::http::Timeout / https::Timeout — cap any one mirror's hang at
+#   30s instead of the default 120s.
+# Acquire::Languages "en" — skip translation downloads for ~100 locales,
+#   which is often the slowest part of `apt update`.
+# Acquire::Retries "5" — recover from a momentarily flaky mirror without
+#   failing the whole task.
+# APT::Get::List-Cleanup "false" — don't delete old indices on every run.
+- name: Optimize apt for slow / flaky networks
   ansible.builtin.copy:
     dest: /etc/apt/apt.conf.d/99-speed
     content: |
+      Acquire::ForceIPv4 "true";
+      Acquire::http::Timeout "30";
+      Acquire::https::Timeout "30";
       Acquire::Languages "en";
-      Acquire::Queue-Mode "host";
       Acquire::Retries "5";
       APT::Get::List-Cleanup "false";
     owner: root
@@ -17,16 +28,18 @@
     mode: '0644'
   become: true
 
+# `apt-transport-https` is a transitional no-op on Ubuntu 18.04+ — apt has
+# native HTTPS support. Dropped to save one round-trip.
 - name: Ensure apt transport dependencies are installed
   ansible.builtin.apt:
     name:
-      - apt-transport-https
       - ca-certificates
       - curl
       - gnupg
       - lsb-release
     state: present
     update_cache: true
+    cache_valid_time: 3600
   become: true
 
 - name: Ensure apt keyrings directory exists
@@ -61,7 +74,7 @@
       https://apt.releases.hashicorp.com {{ ansible_distribution_release }} main"
     state: present
     filename: hashicorp
-    update_cache: true
+    update_cache: false
   become: true
 
 # 1Password — must use signed-by=/usr/share/keyrings/1password-archive-keyring.gpg
@@ -87,11 +100,13 @@
       https://downloads.1password.com/linux/debian/amd64 stable main"
     state: present
     filename: 1password
-    update_cache: true
+    update_cache: false
   become: true
 
+# Single apt-update at the end — picks up the two new third-party repos
+# we just added without each apt_repository task triggering its own.
 - name: Refresh apt metadata
-  become: true
   ansible.builtin.apt:
     update_cache: true
+  become: true
   changed_when: false
