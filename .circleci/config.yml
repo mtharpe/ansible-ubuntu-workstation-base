@@ -58,14 +58,16 @@ jobs:
           name: Install Molecule and required collections
           command: |
             python -m pip install --upgrade pip
-            python -m pip install ansible molecule molecule-plugins[docker]
-            ansible-galaxy collection install community.general ansible.posix
+            python -m pip install ansible "molecule-plugins[docker,podman]"
+            ansible-galaxy collection install community.general ansible.posix community.docker containers.podman
       - run:
+          # Only the default (podman) scenario is parsed here. The docker
+          # scenario is structurally identical and the docker driver tries
+          # to contact a daemon at syntax time — which doesn't exist in the
+          # CircleCI docker executor. Validating the default scenario covers
+          # both since the converge.yml is shared.
           name: molecule syntax (default scenario)
           command: molecule syntax -s default
-      - run:
-          name: molecule syntax (docker scenario)
-          command: molecule syntax -s docker
 
   shellcheck:
     executor: shellcheck
@@ -74,8 +76,17 @@ jobs:
       - run:
           name: shellcheck
           command: |
+            # Lint our own shell script. The find here scans for any other
+            # shell scripts but excludes templates/ — those are dotfile
+            # templates we DEPLOY (e.g. fish_aliases.sh is a fish script that
+            # shellcheck doesn't understand).
             shellcheck run.sh
-            find . -name '*.sh' -not -path './.git/*' -print0 | xargs -0 shellcheck
+            find . -name '*.sh' \
+              -not -path './.git/*' \
+              -not -path './.ansible/*' \
+              -not -path './templates/*' \
+              -not -path './roles/*/templates/*' \
+              -print0 | xargs -0 -r shellcheck
 
 workflows:
   validate:
