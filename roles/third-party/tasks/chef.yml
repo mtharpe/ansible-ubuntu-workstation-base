@@ -3,23 +3,13 @@
   ansible.builtin.stat:
     path: /opt/chef-workstation/bin/chef
   register: chef_installed
-
-- name: Download Chef install script
-  ansible.builtin.get_url:
-    url: https://omnitruck.chef.io/install.sh
-    dest: /tmp/chef_install.sh
-    mode: "0755"
-  when: not chef_installed.stat.exists
-  become: true
+  tags: [third_party, chef]
 
 - name: Install Chef Workstation
-  ansible.builtin.command:
-    cmd: /tmp/chef_install.sh -P chef-workstation
+  ansible.builtin.apt:
+    deb: https://packages.chef.io/files/stable/chef-workstation/22.1.745/ubuntu/22.04/chef-workstation_22.1.745-1_amd64.deb
+    state: present
+  retries: 3
   when: not chef_installed.stat.exists
   become: true
-
-- name: Install Test-Kitchen gems
-  ansible.builtin.command: chef gem install kitchen-vagrant kitchen-ansible
-  environment:
-    CHEF_LICENSE: accept
-  become: true
+  tags: [third_party, chef]

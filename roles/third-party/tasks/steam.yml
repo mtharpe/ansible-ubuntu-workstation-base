@@ -1,29 +1,16 @@
 ---
 - name: Enable multiverse repository for Steam
   ansible.builtin.apt_repository:
-    repo: deb http://archive.ubuntu.com/ubuntu {{ ansible_distribution_release }} multiverse
+    repo: "deb http://archive.ubuntu.com/ubuntu {{ ansible_distribution_release }} multiverse"
     state: present
     update_cache: true
   become: true
-
-- name: Enable multiverse updates repository for Steam
-  ansible.builtin.apt_repository:
-    repo: deb http://archive.ubuntu.com/ubuntu {{ ansible_distribution_release }}-updates multiverse
-    state: present
-    update_cache: true
-  become: true
-
-- name: Enable multiverse security repository for Steam
-  ansible.builtin.apt_repository:
-    repo: deb http://archive.ubuntu.com/ubuntu {{ ansible_distribution_release }}-security multiverse
-    state: present
-    update_cache: true
-  become: true
+  tags: [third_party, steam]
 
 - name: Install Steam
   ansible.builtin.apt:
     name: steam
     state: present
-    update_cache: true
   become: true
   failed_when: false
+  tags: [third_party, steam]

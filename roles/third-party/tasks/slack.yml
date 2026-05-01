@@ -1,13 +1,42 @@
 ---
-- name: Download Slack deb
-  ansible.builtin.get_url:
-    url: https://downloads.slack-edge.com/linux_releases/slack-desktop-4.36.140-amd64.deb
-    dest: /tmp/slack-desktop.deb
-    mode: "0644"
-  become: true
+- name: Check if Slack is already installed
+  ansible.builtin.command:
+    cmd: dpkg -s slack-desktop
+  register: slack_installed
+  changed_when: false
+  failed_when: false
+  tags: [third_party, slack]
 
-- name: Install Slack
+- name: Download Slack deb via curl
+  ansible.builtin.shell: |
+    curl -fSL -A "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36" \
+      "https://downloads.slack-edge.com/desktop-releases/linux/x64/4.46.101/slack-desktop-4.46.101-amd64.deb" -o /tmp/slack-latest.deb
+  args:
+    executable: /bin/bash
+  when: slack_installed.rc != 0
+  tags: [third_party, slack]
+
+- name: Verify downloaded file is a Debian package
+  ansible.builtin.command:
+    cmd: file -b /tmp/slack-latest.deb
+  register: slack_deb_file
+  changed_when: false
+  failed_when: "'Debian' not in slack_deb_file.stdout"
+  vars:
+    ansible_shell_executable: /bin/bash
+  when: slack_installed.rc != 0
+  tags: [third_party, slack]
+
+- name: Show downloaded file type when verification failed
+  ansible.builtin.debug:
+    msg: "Downloaded file /tmp/slack-latest.deb type: {{ slack_deb_file.stdout }}"
+  when: slack_installed.rc != 0 and 'Debian' not in slack_deb_file.stdout
+  tags: [third_party, slack]
+
+- name: Install Slack (latest deb)
   ansible.builtin.apt:
-    deb: /tmp/slack-desktop.deb
+    deb: /tmp/slack-latest.deb
     state: present
   become: true
+  when: slack_installed.rc != 0
+  tags: [third_party, slack]

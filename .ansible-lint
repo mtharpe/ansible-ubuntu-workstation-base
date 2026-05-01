@@ -1,9 +1,6 @@
----
 skip_list:
-  - command-instead-of-shell # Use shell only when shell functionality is required
-  - no-changed-when # Commands should not change things if nothing needs doing
-  - risky-shell-pipe # Shells that use pipes should set the pipefail option
+  - command-instead-of-shell  # Use shell only when shell functionality is required
+  - no-changed-when  # Commands should not change things if nothing needs doing
+  - risky-shell-pipe  # Shells that use pipes should set the pipefail option
   - role-name
-exclude_paths:
-  - ./roles/configuration/files/alacritty.yml
-  - roles/configuration/files/alacritty.yml
+  - file-permissions  # Skip file permissions unset or incorrect

@@ -3,7 +3,6 @@
   ansible.builtin.apt:
     name:
       - docker
-      - docker.io
       - docker-engine
       - docker-ce
       - docker-ce-cli
@@ -12,6 +11,7 @@
     state: absent
   become: true
   failed_when: false
+  tags: [third_party, docker]
 
 - name: Install Docker packages
   ansible.builtin.apt:
@@ -21,12 +21,14 @@
     state: present
     update_cache: true
   become: true
+  tags: [third_party, docker]
 
 - name: Ensure docker group exists
   ansible.builtin.group:
     name: docker
     state: present
   become: true
+  tags: [third_party, docker]
 
 - name: Add user to docker group
   ansible.builtin.user:
@@ -34,3 +36,4 @@
     groups: [docker]
     append: true
   become: true
+  tags: [third_party, docker]

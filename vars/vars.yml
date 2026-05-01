@@ -30,14 +30,9 @@ install_fish: true
 install_starship: false
 install_nerd_font: true
 install_eza: true
-install_gnome_extensions: false
 
-# Firewall (mapped to ufw on Ubuntu)
-firewalld_allowed_services:
-  - ssh
-  - mdns
-  - dhcpv6-client
-firewalld_allowed_ports: []
-
-# Python
+# python3
 ansible_python_interpreter: /usr/bin/python3
+
+# Ubuntu target version (used for pinning images / docs)
+ubuntu_version: "24.04"

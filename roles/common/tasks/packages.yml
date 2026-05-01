@@ -1,10 +1,11 @@
 ---
+# Install extra packages
 - name: Install base packages
   ansible.builtin.apt:
     name:
       - 1password
-      - ansible
-      - ansible-lint
+      - direnv
+      - fail2ban
       - arpwatch
       - autoconf
       - autofs
@@ -14,14 +15,9 @@
       - cmake
       - curl
       - dconf-editor
-      - direnv
-      - fail2ban
-      - ffmpeg
-      - gh
-      - git
-      - gnome-extensions-app
-      - gnome-tweaks
+      - ufw
       - golang
+      - gh
       - htop
       - iotop
       - jq
@@ -32,92 +28,116 @@
       - nmap
       - nmon
       - npm
-      - python3-psutil
-      - python3-pip
-      - python3-termcolor
       - ripgrep
       - speedtest-cli
       - sysstat
       - tmux
       - transmission
-      - ufw
-      - unzip
-      - util-linux
       - neovim
       - terraform
       - vault
       - consul
       - nomad
       - packer
-      - vlc
+      - python3-psutil
+      - python3-pip
+      - python3-termcolor
+      - unzip
       - alacritty
+      - vlc
+      - util-linux
       - nextcloud-desktop
+      - gnome-extensions-app
+      - gnome-tweaks
     state: present
     update_cache: true
   become: true
+
+# Ansible itself is a prerequisite to run this playbook, so re-installing via apt
+# is redundant. Skip in containers because the Ubuntu `ansible` package
+# triggers a long py_compile postinst that times out small CI VMs.
+- name: Install Ansible tooling
+  ansible.builtin.apt:
+    name:
+      - ansible
+      - ansible-lint
+    state: present
+  become: true
+  when: not is_container | default(false)
+
+# Install full ffmpeg (Ubuntu's universe ffmpeg replaces Fedora's swap dance)
+- name: Install ffmpeg and VA-API packages
+  ansible.builtin.apt:
+    name:
+      - ffmpeg
+      - libva2
+      - vainfo
+    state: present
+  become: true
+
+# Install OpenH264 codecs and plugins (best-effort: package availability varies by release)
+- name: Install OpenH264 codecs and plugins
+  ansible.builtin.apt:
+    name:
+      - gstreamer1.0-libav
+      - gstreamer1.0-plugins-bad
+      - gstreamer1.0-plugins-ugly
+    state: present
+  become: true
+  failed_when: false
 
 - name: Install fastfetch when available
   ansible.builtin.apt:
     name: fastfetch
     state: present
-    update_cache: true
   become: true
   failed_when: false
 
-- name: Install extra fonts
-  ansible.builtin.apt:
-    name:
-      - fonts-dejavu
-      - fonts-inconsolata
-      - fonts-liberation
-      - fonts-terminus
-      - fonts-anonymous-pro
-      - fonts-source-code-pro
-    state: present
-    update_cache: true
-  become: true
-
-- name: Install OpenH264 codecs when available
-  ansible.builtin.apt:
-    name:
-      - gstreamer1.0-openh264
-      - libopenh264-6
-      - mozilla-openh264
-    state: present
-    update_cache: true
-  become: true
-  failed_when: false
-
+# Install molecule for testing (skipped in containers — Ubuntu 24.04 enforces PEP 668)
 - name: Install molecule via pip
   ansible.builtin.pip:
     name: molecule
     state: present
-  become: true
-  when: install_packager | default(false)
+    extra_args: --break-system-packages
+  when: not is_container | default(false)
 
-- name: Install molecule-podman via pip
+# Install molecule-podman driver for Molecule
+- name: Install molecule-podman driver via pip
   ansible.builtin.pip:
     name: molecule-podman
     state: present
-  become: true
-  when: install_packager | default(false)
+    extra_args: --break-system-packages
+  when: not is_container | default(false)
 
-- name: Remove unwanted packages
+# Install podman only if docker is not requested
+- name: Install podman if docker is not enabled
   ansible.builtin.apt:
-    name:
-      - firefox
-      - gnome-calendar
-      - gnome-contacts
-      - gnome-maps
-      - rhythmbox
-      - totem
-      - gnome-tour
-      - gnome-abrt
-      - gnome-logs
-    state: absent
+    name: podman
+    state: present
+  become: true
+  when: not install_docker | default(false)
+
+# Install extra fonts. Install one-by-one with failed_when: false so a single
+# missing package (e.g. removed/renamed in a newer Ubuntu) doesn't fail the
+# whole playbook — fonts are optional cosmetic enhancements.
+- name: Install extra fonts (best-effort)
+  ansible.builtin.apt:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - fonts-anonymous-pro
+    - fonts-dejavu
+    - fonts-dejavu-core
+    - fonts-dejavu-extra
+    - fonts-freefont-ttf
+    - fonts-inconsolata
+    - fonts-liberation
+    - fonts-liberation2
+    - fonts-terminus
   become: true
   failed_when: false
 
+# Optionally install a Nerd Font (FiraCode) for icons (starship, prompts)
 - name: Check if FiraCode Nerd Font is already installed
   ansible.builtin.command:
     cmd: fc-list | grep -i "Fira Code"
@@ -128,9 +148,9 @@
 
 - name: Download FiraCode Nerd Font zip
   ansible.builtin.get_url:
-    url: https://github.com/ryanoasis/nerd-fonts/releases/latest/download/FiraCode.zip
+    url: "https://github.com/ryanoasis/nerd-fonts/releases/latest/download/FiraCode.zip"
     dest: /tmp/FiraCode.zip
-    mode: "0644"
+    mode: '0644'
     force: true
   when:
     - install_nerd_font | default(false)
@@ -142,7 +162,7 @@
     state: directory
     owner: root
     group: root
-    mode: "0755"
+    mode: '0755'
   become: true
   when: install_nerd_font | default(false)
 
@@ -152,10 +172,30 @@
     dest: /usr/local/share/fonts/nerdfonts
     remote_src: true
   become: true
+  register: common_firacode_unarchive
   when: install_nerd_font | default(false)
 
 - name: Refresh font cache
   ansible.builtin.command:
     cmd: fc-cache -f -v
   become: true
-  when: install_nerd_font | default(false)
+  when:
+    - install_nerd_font | default(false)
+    - common_firacode_unarchive.changed | default(false)
+  changed_when: true
+
+# Uninstall unwanted apps
+- name: Uninstall junk apps
+  ansible.builtin.apt:
+    name:
+      - firefox
+      - gnome-calendar
+      - gnome-contacts
+      - gnome-maps
+      - rhythmbox
+      - totem
+      - gnome-tour
+      - gnome-logs
+    state: absent
+  become: true
+  failed_when: false

@@ -1,6 +1,6 @@
 ---
 - name: Setup Workstation
-  hosts: all
+  hosts: workstation
   become: true
   gather_facts: true
 
@@ -11,3 +11,6 @@
     - common
     - third-party
     - gnome
+
+  handlers:
+    - ansible.builtin.import_tasks: handlers/main.yml

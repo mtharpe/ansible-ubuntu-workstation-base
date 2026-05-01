@@ -6,7 +6,6 @@
     owner: "{{ local_user }}"
     group: "{{ local_user }}"
     mode: "0644"
-  become: true
 
 - name: Template bash_profile
   ansible.builtin.copy:
@@ -15,7 +14,6 @@
     owner: "{{ local_user }}"
     group: "{{ local_user }}"
     mode: "0644"
-  become: true
 
 - name: Template bash_aliases
   ansible.builtin.copy:
@@ -24,7 +22,6 @@
     owner: "{{ local_user }}"
     group: "{{ local_user }}"
     mode: "0644"
-  become: true
 
 - name: Template tmux.conf
   ansible.builtin.copy:
@@ -33,12 +30,17 @@
     owner: "{{ local_user }}"
     group: "{{ local_user }}"
     mode: "0644"
-  become: true
 
 - name: Install Tmux TPM
   ansible.builtin.git:
     repo: https://github.com/tmux-plugins/tpm
     dest: /home/{{ local_user }}/.tmux/plugins/tpm
     version: master
+
+- name: Podman autocomplete
+  ansible.builtin.command:
+    cmd: podman completion -f /etc/bash_completion.d/podman bash
+  args:
+    creates: /etc/bash_completion.d/podman
   become: true
-  become_user: "{{ local_user }}"
+  failed_when: false   # podman may not be installed when install_docker=true

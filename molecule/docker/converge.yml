@@ -1,0 +1,19 @@
+---
+- name: Converge all roles
+  hosts: all
+  become: true
+  gather_facts: true
+  vars:
+    local_user: testuser
+
+  pre_tasks:
+    - name: Ensure test user exists
+      ansible.builtin.user:
+        name: "{{ local_user }}"
+        state: present
+
+  roles:
+    - role: common
+    - role: third-party
+    - role: gnome
+      when: not is_container | default(false)

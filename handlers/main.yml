@@ -1,0 +1,12 @@
+---
+- name: Create systemd-tmpfiles
+  ansible.builtin.command: /usr/bin/systemd-tmpfiles --prefix=/sys --create
+- name: Restart ssh
+  ansible.builtin.service:
+    name: ssh
+    state: restarted
+
+- name: Restart fail2ban
+  ansible.builtin.service:
+    name: fail2ban
+    state: restarted

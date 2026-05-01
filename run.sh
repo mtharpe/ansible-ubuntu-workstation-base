@@ -1,21 +1,19 @@
 #!/bin/bash
-ansible=`which ansible`
+set -euo pipefail
 
-if [ -z "$ansible" ]; then
- sudo apt install ansible -y
+if ! command -v ansible >/dev/null 2>&1; then
+  sudo apt-get update
+  sudo apt-get install -y ansible
 fi
 
-if [ ! -f "/etc/sudoers/${USER}" ]; then
-  echo "${USER} ALL=(ALL) NOPASSWD: ALL" | sudo tee -a /etc/sudoers.d/${USER}
-fi
-
-if [ -z "$ansible" ]; then
- sudo apt install ansible -y
+SUDOERS_DROPIN="/etc/sudoers.d/${USER}"
+if [ ! -f "${SUDOERS_DROPIN}" ]; then
+  echo "${USER} ALL=(ALL) NOPASSWD: ALL" | sudo tee -a "${SUDOERS_DROPIN}"
 fi
 
 until ansible-playbook --extra-vars "local_user=${USER}" setup_workstation.yml; do
-  echo Ansible run disrupted, retrying in 10 seconds...
+  echo "Ansible run disrupted, retrying in 10 seconds..."
   sleep 10
 done
 
-sudo rm -f /etc/sudoers.d/${USER}
+sudo rm -f "${SUDOERS_DROPIN}"

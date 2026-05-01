@@ -4,6 +4,7 @@
     repo: https://github.com/AdnanHodzic/auto-cpufreq.git
     dest: /tmp/autocpu
     version: master
+  tags: [third_party, autocpu]
 
 - name: Install Auto-CPUFreq build dependencies
   ansible.builtin.apt:
@@ -11,20 +12,22 @@
       - python3-dev
       - dmidecode
     state: present
-    update_cache: true
   become: true
+  tags: [third_party, autocpu]
 
 - name: Install Python requirements for Auto-CPUFreq
   ansible.builtin.pip:
     requirements: /tmp/autocpu/requirements.txt
   become: true
+  tags: [third_party, autocpu]
 
-- name: Build and install Auto-CPUFreq
+- name: Build & install Auto-CPUFreq
   ansible.builtin.command:
     cmd: python3 setup.py install --record files.txt
     chdir: /tmp/autocpu
+    creates: /usr/local/bin/auto-cpufreq
   become: true
-  changed_when: true
+  tags: [third_party, autocpu]
 
 - name: Ensure auto-cpufreq directory exists
   ansible.builtin.file:
@@ -34,6 +37,7 @@
     group: root
     mode: "0755"
   become: true
+  tags: [third_party, autocpu]
 
 - name: Copy Auto-CPUFreq scripts
   ansible.builtin.copy:
@@ -44,3 +48,4 @@
     mode: "0755"
     remote_src: true
   become: true
+  tags: [third_party, autocpu]

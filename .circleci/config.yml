@@ -1,11 +1,87 @@
 ---
 version: 2.1
-jobs:
-  build:
+
+executors:
+  python:
     docker:
-      - image: python:3-slim
+      - image: cimg/python:3.12
+  shellcheck:
+    docker:
+      - image: koalaman/shellcheck-alpine:stable
+
+jobs:
+  ansible-lint:
+    executor: python
     steps:
       - checkout
-      - run: pip install ansible ansible-lint
-      - run: ansible-lint --version
-      - run: ansible-lint .
+      - run:
+          name: Install Ansible tooling
+          command: |
+            python -m pip install --upgrade pip
+            python -m pip install ansible ansible-lint
+      - run:
+          name: ansible-lint
+          command: ansible-lint .
+
+  yamllint:
+    executor: python
+    steps:
+      - checkout
+      - run:
+          name: Install yamllint
+          command: |
+            python -m pip install --upgrade pip
+            python -m pip install yamllint
+      - run:
+          name: yamllint
+          command: yamllint .
+
+  syntax-check:
+    executor: python
+    steps:
+      - checkout
+      - run:
+          name: Install Ansible and required collections
+          command: |
+            python -m pip install --upgrade pip
+            python -m pip install ansible
+            ansible-galaxy collection install community.general ansible.posix
+      - run:
+          name: ansible-playbook --syntax-check
+          command: ansible-playbook --syntax-check setup_workstation.yml
+
+  molecule-syntax:
+    executor: python
+    steps:
+      - checkout
+      - run:
+          name: Install Molecule and required collections
+          command: |
+            python -m pip install --upgrade pip
+            python -m pip install ansible molecule molecule-plugins[docker]
+            ansible-galaxy collection install community.general ansible.posix
+      - run:
+          name: molecule syntax (default scenario)
+          command: molecule syntax -s default
+      - run:
+          name: molecule syntax (docker scenario)
+          command: molecule syntax -s docker
+
+  shellcheck:
+    executor: shellcheck
+    steps:
+      - checkout
+      - run:
+          name: shellcheck
+          command: |
+            shellcheck run.sh
+            find . -name '*.sh' -not -path './.git/*' -print0 | xargs -0 shellcheck
+
+workflows:
+  validate:
+    jobs:
+      - ansible-lint
+      - yamllint
+      - syntax-check
+      - molecule-syntax
+      - shellcheck

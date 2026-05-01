@@ -1,7 +1,0 @@
-# yamllint disable rule:empty-lines
----
-# Ansible Galaxy requirements file
-collections:
-  - community.general
-  - ansible.posix
-  - shipilovds.workstation

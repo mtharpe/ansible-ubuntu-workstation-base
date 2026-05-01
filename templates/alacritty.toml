@@ -1,0 +1,72 @@
+[bell]
+animation = "EaseOutSine"
+duration = 500
+
+[colors]
+draw_bold_text_with_bright_colors = true
+
+[colors.bright]
+black = "0x808080"
+blue = "0x4f7fff"
+cyan = "0x2aa198"
+green = "0x8ccf6b"
+magenta = "0xbc6ff1"
+red = "0xff6b6b"
+white = "0xe6e6e6"
+yellow = "0xffd24a"
+
+[colors.cursor]
+cursor = "0xffd43b"
+text = "0x2e2e2e"
+
+[colors.normal]
+black = "0x2e3436"
+blue = "0x4f7fff"
+cyan = "0x2aa198"
+green = "0x8ccf6b"
+magenta = "0xbc6ff1"
+red = "0xff6b6b"
+white = "0xdcdcdc"
+yellow = "0xffd24a"
+
+[colors.primary]
+background = "#1a1a1a"
+foreground = "0xdcdcdc"
+
+[font]
+size = 16
+
+[font.bold]
+family = "FiraCode Nerd Font"
+style = "Bold"
+
+[font.bold_italic]
+family = "FiraCode Nerd Font"
+style = "Bold Italic"
+
+[font.italic]
+family = "FiraCode Nerd Font"
+style = "Italic"
+
+[font.normal]
+family = "FiraCode Nerd Font"
+style = "Regular"
+
+[selection]
+save_to_clipboard = true
+
+[terminal.shell]
+args = ["-l", "-c", "tmux attach || tmux"]
+program = "/bin/bash"
+
+[window]
+decorations = "full"
+dynamic_padding = true
+dynamic_title = false
+startup_mode = "Maximized"
+title = "Terminal"
+
+[general]
+live_config_reload = true
+
+[terminal]

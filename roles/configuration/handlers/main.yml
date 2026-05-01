@@ -1,7 +1,0 @@
----
-# Content below
-- name: Restart_SSH
-  become: true
-  ansible.builtin.service:
-    name: ssh
-    state: restarted

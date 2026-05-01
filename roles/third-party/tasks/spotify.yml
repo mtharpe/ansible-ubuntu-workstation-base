@@ -1,20 +1,33 @@
 ---
+- name: Check for Spotify repo
+  ansible.builtin.stat:
+    path: /etc/apt/sources.list.d/spotify.list
+  register: ubuntu_spotify_installed
+  tags: [third_party, spotify]
+
 - name: Apt key for Spotify
   ansible.builtin.apt_key:
     url: https://download.spotify.com/debian/pubkey_6224F9941A8AA6D1.gpg
     state: present
   become: true
+  when: not ubuntu_spotify_installed.stat.exists
+  tags: [third_party, spotify]
 
-- name: Spotify repo
+- name: Add Spotify repository
   ansible.builtin.apt_repository:
-    repo: deb http://repository.spotify.com stable non-free
+    repo: "deb http://repository.spotify.com stable non-free"
     state: present
+    filename: spotify
     update_cache: true
+  when: not ubuntu_spotify_installed.stat.exists
   become: true
+  tags: [third_party, spotify]
 
 - name: Install Spotify client
   ansible.builtin.apt:
     name: spotify-client
     state: present
     update_cache: true
+  failed_when: false   # Repo occasionally lags new Ubuntu release; tolerate
   become: true
+  tags: [third_party, spotify]

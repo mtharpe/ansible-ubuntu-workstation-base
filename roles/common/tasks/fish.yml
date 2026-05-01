@@ -11,7 +11,7 @@
     path: /etc/shells
     line: /usr/bin/fish
     create: true
-    mode: "0644"
+    mode: '0644'
     state: present
   become: true
 
@@ -73,7 +73,9 @@
   when: install_starship | default(false)
 
 - name: Install Starship fish prompt
-  ansible.builtin.shell: sh /tmp/starship_install.sh --yes
+  ansible.builtin.shell:
+    cmd: sh /tmp/starship_install.sh --yes
+    creates: /usr/local/bin/starship
   when: install_starship | default(false)
 
 - name: Template starship config
@@ -83,6 +85,16 @@
     owner: "{{ local_user }}"
     group: "{{ local_user }}"
     mode: "0644"
+  become: true
+  when: install_starship | default(false)
+
+- name: Create user .config directory
+  ansible.builtin.file:
+    path: /home/{{ local_user }}/.config
+    owner: "{{ local_user }}"
+    group: "{{ local_user }}"
+    mode: "0755"
+    state: directory
   become: true
   when: install_starship | default(false)
 
@@ -108,27 +120,23 @@
     state: absent
   become: true
 
-- name: Download Fisher installer
-  ansible.builtin.get_url:
-    url: https://raw.githubusercontent.com/jorgebucaran/fisher/main/functions/fisher.fish
-    dest: /tmp/fisher.fish
-    mode: "0644"
-  become: true
-
-- name: Install Fisher (Fish plugin manager)
-  ansible.builtin.command:
-    cmd: /usr/bin/fish -c "source /tmp/fisher.fish; fisher install pure-fish/pure"
+- name: Install Fisher (Fish plugin manager)  # noqa: command-instead-of-module
+  ansible.builtin.shell:
+    cmd: >-
+      curl -sL https://git.io/fisher | source &&
+      fisher install pure-fish/pure
+    executable: /bin/fish
     creates: "/home/{{ local_user }}/.config/fish/functions/fisher.fish"
   become: true
   become_user: "{{ local_user }}"
 
 - name: Configure Fish to use Pure Prompt
   ansible.builtin.blockinfile:
-    path: /home/{{ local_user }}/.config/fish/config.fish
+    path: "/home/{{ local_user }}/.config/fish/config.fish"
     create: true
     owner: "{{ local_user }}"
     group: "{{ local_user }}"
-    mode: "0644"
+    mode: '0644'
     block: |
         # --- Configure Pure Prompt ---
         if status is-interactive
@@ -137,9 +145,9 @@
             set -g pure_show_system_time true
             set --universal pure_show_numbered_git_indicator true
             set --universal pure_symbol_git_dirty '*'
-            set --universal pure_symbol_git_stash 'S'
-            set --universal pure_symbol_git_unpulled_commits 'v'
-            set --universal pure_symbol_git_unpushed_commits '^'
+            set --universal pure_symbol_git_stash '≡'
+            set --universal pure_symbol_git_unpulled_commits '⇣'
+            set --universal pure_symbol_git_unpushed_commits '⇡'
           end
         end
         # ---------------------------

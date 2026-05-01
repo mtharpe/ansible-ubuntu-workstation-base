@@ -1,0 +1,24 @@
+# {{ ansible_managed }}
+
+# Source global definitions
+if [ -f /etc/bashrc ]; then
+        . /etc/bashrc
+fi
+
+# User specific environment
+if ! [[ "$PATH" =~ "$HOME/.local/bin:$HOME/bin:" ]]
+then
+    PATH="$HOME/.local/bin:$HOME/bin:$PATH"
+fi
+export PATH
+
+if [ -f ~/.tmux.conf ]; then
+    tmux source-file ~/.tmux.conf
+fi
+
+complete -C /usr/bin/vagrant vagrant
+complete -C /usr/bin/packer packer
+complete -C /usr/bin/terraform terraform
+complete -C /usr/bin/vault vault
+complete -C /usr/bin/consul consul
+complete -C /usr/bin/nomad nomad

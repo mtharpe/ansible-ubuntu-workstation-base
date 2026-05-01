@@ -1,16 +1,26 @@
 ---
-- name: Apt key for VSCode
+- name: Check for VSCode repo
+  ansible.builtin.stat:
+    path: /etc/apt/sources.list.d/vscode.list
+  register: ubuntu_vscode_installed
+  tags: [third_party, vscode]
+
+- name: Apt key for Microsoft (VSCode)
   ansible.builtin.apt_key:
     url: https://packages.microsoft.com/keys/microsoft.asc
     state: present
   become: true
+  tags: [third_party, vscode]
 
-- name: VSCode repo
+- name: Add VSCode repo
   ansible.builtin.apt_repository:
-    repo: deb [arch=amd64] http://packages.microsoft.com/repos/code stable main
+    repo: "deb [arch=amd64] https://packages.microsoft.com/repos/code stable main"
     state: present
+    filename: vscode
     update_cache: true
+  when: not ubuntu_vscode_installed.stat.exists
   become: true
+  tags: [third_party, vscode]
 
 - name: Install VSCode
   ansible.builtin.apt:
@@ -18,3 +28,4 @@
     state: present
     update_cache: true
   become: true
+  tags: [third_party, vscode]

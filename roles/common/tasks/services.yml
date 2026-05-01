@@ -4,13 +4,15 @@
     name: ssh
     state: started
     enabled: true
-  when: enable_sshd | default(false)
-  become: true
+  when:
+    - enable_sshd | default(false)
+    - not is_container | default(false)
 
 - name: Start and enable fail2ban
   ansible.builtin.service:
     name: fail2ban
     state: started
     enabled: true
-  when: enable_fail2ban | default(false)
-  become: true
+  when:
+    - enable_fail2ban | default(false)
+    - not is_container | default(false)

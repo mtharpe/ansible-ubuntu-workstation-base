@@ -2,6 +2,7 @@
 - name: Ensure apt transport dependencies are installed
   ansible.builtin.apt:
     name:
+      - apt-transport-https
       - ca-certificates
       - curl
       - gnupg
@@ -10,34 +11,69 @@
     update_cache: true
   become: true
 
-- name: Apt key for HashiCorp
-  ansible.builtin.apt_key:
-    url: https://apt.releases.hashicorp.com/gpg
-    state: present
+- name: Ensure apt keyrings directory exists
+  ansible.builtin.file:
+    path: /usr/share/keyrings
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
   become: true
 
-- name: HashiCorp repo
+# HashiCorp — store the dearmored key in /usr/share/keyrings and
+# reference it with signed-by= so apt sources line up cleanly with any
+# package-shipped source list (avoids "Conflicting Signed-By" errors).
+- name: Fetch HashiCorp signing key
+  ansible.builtin.get_url:
+    url: https://apt.releases.hashicorp.com/gpg
+    dest: /tmp/hashicorp-archive-keyring.asc
+    mode: '0644'
+    force: false
+  become: true
+
+- name: Install HashiCorp signing key (dearmored)
+  ansible.builtin.shell:
+    cmd: gpg --dearmor < /tmp/hashicorp-archive-keyring.asc > /usr/share/keyrings/hashicorp-archive-keyring.gpg
+    creates: /usr/share/keyrings/hashicorp-archive-keyring.gpg
+  become: true
+
+- name: Add HashiCorp repository
   ansible.builtin.apt_repository:
-    repo: deb [arch=amd64] https://apt.releases.hashicorp.com {{ ansible_distribution_release }} main
+    repo: "deb [arch=amd64 signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg]
+      https://apt.releases.hashicorp.com {{ ansible_distribution_release }} main"
     state: present
+    filename: hashicorp
     update_cache: true
   become: true
 
-- name: Apt key for 1Password
-  ansible.builtin.apt_key:
+# 1Password — must use signed-by=/usr/share/keyrings/1password-archive-keyring.gpg
+# to match the source list shipped by the 1password package itself; otherwise
+# apt refuses to load the conflicting source.
+- name: Fetch 1Password signing key
+  ansible.builtin.get_url:
     url: https://downloads.1password.com/linux/keys/1password.asc
-    state: present
+    dest: /tmp/1password-archive-keyring.asc
+    mode: '0644'
+    force: false
   become: true
 
-- name: 1Password repo
+- name: Install 1Password signing key (dearmored)
+  ansible.builtin.shell:
+    cmd: gpg --dearmor < /tmp/1password-archive-keyring.asc > /usr/share/keyrings/1password-archive-keyring.gpg
+    creates: /usr/share/keyrings/1password-archive-keyring.gpg
+  become: true
+
+- name: Add 1Password repository
   ansible.builtin.apt_repository:
-    repo: deb [arch=amd64] https://downloads.1password.com/linux/debian/amd64 stable main
+    repo: "deb [arch=amd64 signed-by=/usr/share/keyrings/1password-archive-keyring.gpg]
+      https://downloads.1password.com/linux/debian/amd64 stable main"
     state: present
+    filename: 1password
     update_cache: true
   become: true
 
 - name: Refresh apt metadata
+  become: true
   ansible.builtin.apt:
     update_cache: true
   changed_when: false
-  become: true

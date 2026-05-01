@@ -1,25 +1,60 @@
 ---
+- name: Determine if eza is available via apt (Ubuntu 24.10+)
+  ansible.builtin.set_fact:
+    eza_apt_available: "{{ (ansible_facts['distribution'] | default('')) == 'Ubuntu' and
+      (ansible_facts['distribution_version'] | default('0') | replace('.', '') | int) >= 2410 }}"
+  tags: [third_party, eza]
+
+- name: Install eza via apt on newer Ubuntu
+  ansible.builtin.apt:
+    name: eza
+    state: present
+    update_cache: true
+  become: true
+  when: eza_apt_available
+  tags: [third_party, eza]
+
+- name: Check for /usr/local/bin/eza
+  ansible.builtin.stat:
+    path: /usr/local/bin/eza
+  register: eza_bin_stat
+  when: not eza_apt_available
+  tags: [third_party, eza]
+
 - name: Download prebuilt eza tarball
   ansible.builtin.get_url:
-    url: https://github.com/eza-community/eza/releases/latest/download/eza_x86_64-unknown-linux-gnu.tar.gz
+    url: "https://github.com/eza-community/eza/releases/latest/download/eza_x86_64-unknown-linux-gnu.tar.gz"
     dest: /tmp/eza.tar.gz
-    mode: "0644"
-    force: true
+    mode: '0644'
+  when:
+    - not eza_apt_available
+    - not (eza_bin_stat.stat.exists | default(false))
+  tags: [third_party, eza]
 
-- name: Ensure eza unpack directory exists
+- name: Check for existing extracted eza binary
+  ansible.builtin.stat:
+    path: /tmp/eza_unpack/eza
+  register: eza_unpack_stat
+  when: not eza_apt_available
+
+- name: Ensure eza_unpack directory exists
   ansible.builtin.file:
     path: /tmp/eza_unpack
     state: directory
-    mode: "0755"
+    mode: '0755'
     owner: root
     group: root
   become: true
+  when: not eza_apt_available
 
 - name: Extract eza tarball
   ansible.builtin.unarchive:
     src: /tmp/eza.tar.gz
     dest: /tmp/eza_unpack
     remote_src: true
+  when:
+    - not eza_apt_available
+    - not (eza_unpack_stat.stat.exists | default(false))
 
 - name: Move eza binary to /usr/local/bin
   ansible.builtin.copy:
@@ -28,8 +63,11 @@
     remote_src: true
     owner: root
     group: root
-    mode: "0755"
+    mode: '0755'
   become: true
+  when:
+    - not eza_apt_available
+    - not (eza_bin_stat.stat.exists | default(false))
 
 - name: Create symlink exa -> eza if exa not present
   ansible.builtin.file:
@@ -37,3 +75,4 @@
     dest: /usr/local/bin/exa
     state: link
   become: true
+  when: not eza_apt_available

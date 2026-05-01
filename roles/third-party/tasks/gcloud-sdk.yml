@@ -1,16 +1,26 @@
 ---
-- name: Apt key for Google Cloud
+- name: Apt key for Google Cloud SDK
   ansible.builtin.apt_key:
     url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
     state: present
   become: true
+  tags: [third_party, gcloud]
 
-- name: Google Cloud SDK repo
+- name: Check if Google Cloud repo file exists
+  ansible.builtin.stat:
+    path: /etc/apt/sources.list.d/google-cloud-sdk.list
+  register: gcloud_repo
+  tags: [third_party, gcloud]
+
+- name: Add Google Cloud SDK repository
   ansible.builtin.apt_repository:
-    repo: deb https://packages.cloud.google.com/apt cloud-sdk main
+    repo: "deb https://packages.cloud.google.com/apt cloud-sdk main"
     state: present
+    filename: google-cloud-sdk
     update_cache: true
+  when: not gcloud_repo.stat.exists
   become: true
+  tags: [third_party, gcloud]
 
 - name: Install Google Cloud SDK packages
   ansible.builtin.apt:
@@ -20,3 +30,4 @@
     state: present
     update_cache: true
   become: true
+  tags: [third_party, gcloud]

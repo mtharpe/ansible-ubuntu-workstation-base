@@ -1,13 +1,14 @@
 ---
-- name: Fetch Zoom
+- name: Download Zoom deb
   ansible.builtin.get_url:
     url: https://zoom.us/client/latest/zoom_amd64.deb
     dest: /tmp/zoom_amd64.deb
     mode: "0644"
-  become: true
+  tags: [third_party, zoom]
 
-- name: Install Zoom
+- name: Install Zoom deb
   ansible.builtin.apt:
     deb: /tmp/zoom_amd64.deb
     state: present
   become: true
+  tags: [third_party, zoom]

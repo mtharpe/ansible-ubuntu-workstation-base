@@ -1,26 +1,24 @@
 ---
+- name: Detect container environment
+  ansible.builtin.set_fact:
+    is_container: "{{ ansible_facts['virtualization_type'] | default('') in
+      ['container', 'docker', 'podman', 'lxc', 'systemd-nspawn', 'oci'] }}"
+
 - name: Setup Repos
   ansible.builtin.import_tasks: repos.yml
-
 - name: Setup Packages
   ansible.builtin.import_tasks: packages.yml
-
 - name: Setup Users
   ansible.builtin.import_tasks: users.yml
-
 - name: Setup Services
   ansible.builtin.import_tasks: services.yml
-
 - name: Setup System
   ansible.builtin.import_tasks: system.yml
-
 - name: Setup Harden
   ansible.builtin.import_tasks: harden.yml
-
 - name: Setup Bash
   ansible.builtin.import_tasks: bash.yml
   when: install_bash | default(false)
-
 - name: Setup Fish
   ansible.builtin.import_tasks: fish.yml
   when: install_fish | default(false)

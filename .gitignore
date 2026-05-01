@@ -1,2 +1,5 @@
-.vagrant
+.kitchen*
+.cache
 .vscode
+.vagrant
+.ansible/

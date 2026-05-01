@@ -4,13 +4,23 @@
     url: https://dl.google.com/linux/linux_signing_key.pub
     state: present
   become: true
+  tags: [third_party, chrome]
 
-- name: Google Chrome Stable repo
+- name: Check if Google Chrome repo exists
+  ansible.builtin.stat:
+    path: /etc/apt/sources.list.d/google-chrome.list
+  register: google_chrome_repo
+  tags: [third_party, chrome]
+
+- name: Add Google Chrome repository
   ansible.builtin.apt_repository:
-    repo: deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main
+    repo: "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main"
     state: present
+    filename: google-chrome
     update_cache: true
+  when: not google_chrome_repo.stat.exists
   become: true
+  tags: [third_party, chrome]
 
 - name: Install Google Chrome
   ansible.builtin.apt:
@@ -18,3 +28,30 @@
     state: present
     update_cache: true
   become: true
+  tags: [third_party, chrome]
+
+- name: Check for user google-chrome.desktop
+  ansible.builtin.stat:
+    path: /home/{{ local_user }}/.local/share/applications/google-chrome.desktop
+  register: google_chrome_desktop
+  tags: [third_party, chrome]
+
+- name: Ensure user applications directory exists
+  ansible.builtin.file:
+    path: /home/{{ local_user }}/.local/share/applications
+    state: directory
+    owner: "{{ local_user }}"
+    group: "{{ local_user }}"
+    mode: "0755"
+  become: true
+  tags: [third_party, chrome]
+
+- name: Deploy user google-chrome.desktop
+  ansible.builtin.copy:
+    src: templates/gnome_desktop/google-chrome.desktop
+    dest: /home/{{ local_user }}/.local/share/applications/google-chrome.desktop
+    owner: "{{ local_user }}"
+    group: "{{ local_user }}"
+    mode: "0644"
+  when: not google_chrome_desktop.stat.exists
+  tags: [third_party, chrome]

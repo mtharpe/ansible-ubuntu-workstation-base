@@ -1,125 +1,87 @@
 ---
-- name: Detect Gnome Shell version
-  ansible.builtin.command: gnome-shell --version
-  register: gnome_shell_version_result
-  changed_when: false
-  failed_when: false
-
-- name: Set gnome_shell_version fact
-  ansible.builtin.set_fact:
-    gnome_shell_version: "{{ (gnome_shell_version_result.stdout | regex_search('([0-9]+\\.[0-9]+|[0-9]+)')) | default('') }}"
-  when: gnome_shell_version is not defined
-
-- name: Setup Gnome dconf settings
+- name: Setup Gnome
   community.general.dconf:
     key: "{{ item.k }}"
     value: "{{ item.v }}"
     state: present
   become: true
   become_user: "{{ local_user }}"
-  when: ansible_facts['virtualization_type'] is not defined or ansible_facts['virtualization_type'] != 'container'
+  when: not is_container | default(false)
   loop:
     - k: /org/gnome/desktop/interface/clock-format
       v: "'12h'"
+
     - k: /org/gnome/desktop/boxes/first-run
       v: "false"
+
     - k: /org/gnome/desktop/interface/cursor-theme
       v: "'Adwaita'"
+
     - k: /org/gnome/desktop/interface/enable-hot-corners
       v: "false"
+
     - k: /org/gnome/desktop/interface/gtk-theme
       v: "'Adwaita-dark'"
+
     - k: /org/gnome/desktop/interface/color-scheme
       v: "'prefer-dark'"
+
     - k: /org/gnome/desktop/interface/icon-theme
       v: "'Adwaita'"
+
     - k: /org/gnome/desktop/interface/show-battery-percentage
       v: "true"
+
     - k: /org/gnome/desktop/datetime/automatic-timezone
       v: "true"
+
     - k: /org/gnome/desktop/privacy/remember-app-usage
       v: "false"
+
     - k: /org/gnome/system/location/enabled
       v: "true"
+
     - k: /org/gnome/system/location/max-accuracy-level
       v: "'exact'"
+
     - k: /org/gnome/terminal/legacy/confirm-close
       v: "false"
+
     - k: /org/gnome/terminal/legacy/shell-integration-enabled
       v: "true"
+
     - k: /org/gnome/terminal/legacy/theme-variant
       v: "'dark'"
+
     - k: /org/gnome/terminal/legacy/unified-menu
       v: "false"
+
     - k: /org/gnome/shell/overrides/dynamic-workspaces
       v: "false"
+
     - k: /org/gnome/mutter/dynamic-workspaces
       v: "false"
+
     - k: /org/gnome/desktop/wm/preferences/num-workspaces
       v: 5
+
     - k: /org/gnome/shell/overrides/workspaces-only-on-primary
       v: "true"
+
     - k: /org/gnome/shell/window-switcher/current-workspace-only
       v: "false"
+
     - k: /org/gnome/desktop/peripherals/touchpad/natural-scroll
       v: "false"
+
     - k: /org/gnome/peripherals/mouse/natural-scroll
       v: "false"
+
     - k: /org/gnome/desktop/wm/preferences/button-layout
       v: "'appmenu:minimize,maximize,close'"
+
     - k: /org/gnome/shell/weather/automatic-location
       v: "true"
+
     - k: /org/gnome/shell/weather/locations
       v: "[<(uint32 2, <('Indianapolis', 'KIND', true, [(0.69333204535474746, -1.5059040078213661)], [(0.69408911682438501, -1.5037415099715601)])>)>]"
-
-- name: Get Gnome Shell extension info
-  ansible.builtin.uri:
-    url: https://extensions.gnome.org/extension-info/?pk={{ item }}&shell_version={{ gnome_shell_version }}
-    return_content: true
-  loop: "{{ gnome_extension_ids }}"
-  register: gnome_extension_info_results
-  ignore_errors: true
-  when: install_gnome_extensions | default(false) and (gnome_shell_version | default('')) != ''
-
-- name: Include install_extension.yml task
-  ansible.builtin.include_tasks: install_extension.yml
-  vars:
-    gnome_extension_info: "{{ item.json }}"
-  loop: "{{ gnome_extension_info_results.results }}"
-  when:
-    - install_gnome_extensions | default(false)
-    - item.status == 200
-
-- name: Set permissions for all extensions
-  ansible.builtin.file:
-    dest: "/home/{{ local_user }}/.local/share/gnome-shell/extensions"
-    group: "{{ local_user }}"
-    mode: "0775"
-    recurse: true
-  when: install_gnome_extensions | default(false)
-
-- name: Get Gnome Profile
-  ansible.builtin.shell: set -o pipefail && gsettings get org.gnome.Terminal.ProfilesList default | awk -F "'" '{print $2}'
-  become: true
-  become_user: "{{ local_user }}"
-  register: gnome_profile
-  changed_when: false
-
-- name: Print default profile
-  ansible.builtin.debug:
-    msg: Default Terminal Profile is {{ gnome_profile.stdout }}
-
-- name: Setup Gnome Terminal
-  ansible.builtin.command: "{{ item }}"
-  become: true
-  become_user: "{{ local_user }}"
-  loop:
-    - "gsettings set org.gnome.Terminal.Legacy.Profile:/org/gnome/terminal/legacy/profiles:/:{{ gnome_profile.stdout }}/ visible-name Default"
-    - "gsettings set org.gnome.Terminal.Legacy.Profile:/org/gnome/terminal/legacy/profiles:/:{{ gnome_profile.stdout }}/ use-system-font false"
-    - "gsettings set org.gnome.Terminal.Legacy.Profile:/org/gnome/terminal/legacy/profiles:/:{{ gnome_profile.stdout }}/ font 'Monospace 14'"
-    - "gsettings set org.gnome.Terminal.Legacy.Profile:/org/gnome/terminal/legacy/profiles:/:{{ gnome_profile.stdout }}/ cell-height-scale '1.2'"
-    - "gsettings set org.gnome.Terminal.Legacy.Profile:/org/gnome/terminal/legacy/profiles:/:{{ gnome_profile.stdout }}/ audible-bell false"
-    - "gsettings set org.gnome.Terminal.Legacy.Profile:/org/gnome/terminal/legacy/profiles:/:{{ gnome_profile.stdout }}/ scrollback-unlimited false"
-    - "gsettings set org.gnome.Terminal.Legacy.Profile:/org/gnome/terminal/legacy/profiles:/:{{ gnome_profile.stdout }}/ scrollbar-policy never"
-    - "gsettings set org.gnome.Terminal.Legacy.Profile:/org/gnome/terminal/legacy/profiles:/:{{ gnome_profile.stdout }}/ use-custom-command true"
-    - "gsettings set org.gnome.Terminal.Legacy.Profile:/org/gnome/terminal/legacy/profiles:/:{{ gnome_profile.stdout }}/ custom-command /usr/bin/tmux"
