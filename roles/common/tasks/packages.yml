@@ -93,20 +93,41 @@
   become: true
   failed_when: false
 
-# Install molecule for testing (skipped in containers — Ubuntu 24.04 enforces PEP 668)
-- name: Install molecule via pip
-  ansible.builtin.pip:
-    name: molecule
+# Install molecule via pipx so it gets its own ansible-core in an isolated
+# venv. Avoids conflicting with the apt-installed `ansible` package the user
+# needed to bootstrap this playbook. Skipped in containers — molecule is a
+# workstation testing tool, not needed inside the test target.
+- name: Ensure pipx is installed
+  ansible.builtin.apt:
+    name: pipx
     state: present
-    extra_args: --break-system-packages
+  become: true
   when: not is_container | default(false)
 
-# Install molecule-podman driver for Molecule
-- name: Install molecule-podman driver via pip
-  ansible.builtin.pip:
-    name: molecule-podman
-    state: present
-    extra_args: --break-system-packages
+- name: Install molecule via pipx
+  community.general.pipx:
+    name: molecule
+    state: install
+  become: true
+  become_user: "{{ local_user }}"
+  when: not is_container | default(false)
+
+- name: Inject molecule-podman driver into the molecule pipx env
+  community.general.pipx:
+    name: molecule
+    state: inject
+    inject_packages:
+      - molecule-podman
+  become: true
+  become_user: "{{ local_user }}"
+  when: not is_container | default(false)
+
+- name: Ensure pipx PATH is set up for the user
+  ansible.builtin.command:
+    cmd: pipx ensurepath
+  become: true
+  become_user: "{{ local_user }}"
+  changed_when: false
   when: not is_container | default(false)
 
 # Install podman only if docker is not requested
