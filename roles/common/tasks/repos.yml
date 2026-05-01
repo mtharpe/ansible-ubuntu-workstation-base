@@ -1,4 +1,22 @@
 ---
+# apt speed tuning — drop in BEFORE the first big install so the savings apply.
+# Acquire::Languages "en" stops apt downloading translations for ~100 locales
+# (often the slowest part of `apt update`). Queue-Mode "host" lets apt fetch
+# from multiple mirrors in parallel instead of strictly per-host. Retries
+# saves a re-run when one mirror momentarily flakes.
+- name: Optimize apt for parallel mirrors + English-only translations
+  ansible.builtin.copy:
+    dest: /etc/apt/apt.conf.d/99-speed
+    content: |
+      Acquire::Languages "en";
+      Acquire::Queue-Mode "host";
+      Acquire::Retries "5";
+      APT::Get::List-Cleanup "false";
+    owner: root
+    group: root
+    mode: '0644'
+  become: true
+
 - name: Ensure apt transport dependencies are installed
   ansible.builtin.apt:
     name:
