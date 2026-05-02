@@ -10,7 +10,7 @@
 # a 22.04 deb on (e.g.) 24.04 and hoping it works.
 - name: Compute Chef Workstation deb URL for current release
   ansible.builtin.set_fact:
-    chef_deb_url: "https://packages.chef.io/files/stable/chef-workstation/22.1.745/ubuntu/{{ ansible_distribution_version }}/chef-workstation_22.1.745-1_amd64.deb"
+    chef_deb_url: "https://packages.chef.io/files/stable/chef-workstation/22.1.745/ubuntu/{{ ansible_facts['distribution_version'] }}/chef-workstation_22.1.745-1_amd64.deb"
   when: not chef_installed.stat.exists
   tags: [third_party, chef]
 
@@ -27,7 +27,7 @@
 
 - name: Note unavailable Chef Workstation deb
   ansible.builtin.debug:
-    msg: "Chef Workstation 22.1.745 deb not published for Ubuntu {{ ansible_distribution_version }} — skipping."
+    msg: "Chef Workstation 22.1.745 deb not published for Ubuntu {{ ansible_facts['distribution_version'] }} — skipping."
   when:
     - not chef_installed.stat.exists
     - chef_probe.status | default(0) != 200

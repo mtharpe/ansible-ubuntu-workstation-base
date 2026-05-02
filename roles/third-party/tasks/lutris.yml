@@ -15,7 +15,7 @@
 # Probe the Launchpad pocket so a brand-new (or EOL) Ubuntu skips cleanly.
 - name: Probe Lutris PPA for current Ubuntu release
   ansible.builtin.uri:
-    url: "https://ppa.launchpadcontent.net/lutris-team/lutris/ubuntu/dists/{{ ansible_distribution_release }}/Release"
+    url: "https://ppa.launchpadcontent.net/lutris-team/lutris/ubuntu/dists/{{ ansible_facts['distribution_release'] }}/Release"
     method: HEAD
     status_code: [200, 301, 302]
   register: lutris_probe
@@ -26,7 +26,7 @@
 
 - name: Note unsupported Lutris release
   ansible.builtin.debug:
-    msg: "Lutris PPA has no pocket for '{{ ansible_distribution_release }}' — skipping Lutris install."
+    msg: "Lutris PPA has no pocket for '{{ ansible_facts['distribution_release'] }}' — skipping Lutris install."
   when:
     - not lutris_installed.stat.exists
     - lutris_probe.status | default(0) != 200

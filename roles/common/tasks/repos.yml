@@ -60,7 +60,7 @@
 # the source — otherwise the next `apt update` would fail hard with 404s.
 - name: Probe HashiCorp repo for current Ubuntu release
   ansible.builtin.uri:
-    url: "https://apt.releases.hashicorp.com/dists/{{ ansible_distribution_release }}/Release"
+    url: "https://apt.releases.hashicorp.com/dists/{{ ansible_facts['distribution_release'] }}/Release"
     method: HEAD
     status_code: [200, 301, 302]
   register: common_hashicorp_probe
@@ -69,7 +69,7 @@
 
 - name: Note unsupported HashiCorp release
   ansible.builtin.debug:
-    msg: "HashiCorp apt repo has no pocket for '{{ ansible_distribution_release }}' — skipping."
+    msg: "HashiCorp apt repo has no pocket for '{{ ansible_facts['distribution_release'] }}' — skipping."
   when: common_hashicorp_probe.status | default(0) != 200
 
 - name: Fetch HashiCorp signing key
@@ -91,7 +91,7 @@
 - name: Add HashiCorp repository
   ansible.builtin.apt_repository:
     repo: "deb [arch=amd64 signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg]
-      https://apt.releases.hashicorp.com {{ ansible_distribution_release }} main"
+      https://apt.releases.hashicorp.com {{ ansible_facts['distribution_release'] }} main"
     state: present
     filename: hashicorp
     update_cache: false

@@ -8,7 +8,7 @@ backend = systemd
 usedns = no
 banaction = ufw
 ignoreip = 127.0.0.1/8 ::1 {{ local_network | default('') }}
-sender = fail2ban@{{ ansible_nodename }}
+sender = fail2ban@{{ ansible_facts['nodename'] }}
 destemail = {{ local_user_email }}
 action = %(action_mwl)s
 

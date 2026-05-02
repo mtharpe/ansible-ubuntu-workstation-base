@@ -36,3 +36,7 @@ ansible_python_interpreter: /usr/bin/python3
 
 # Ubuntu target version (used for pinning images / docs)
 ubuntu_version: "24.04"
+
+# Header stamped into rendered config files via `{{ ansible_managed }}`.
+# Replaces the deprecated DEFAULT_MANAGED_STR setting in ansible.cfg.
+ansible_managed: "Ansible managed — do not edit by hand"
