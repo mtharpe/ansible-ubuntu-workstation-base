@@ -15,10 +15,25 @@
   when: vscode_probe.status | default(0) != 200
   tags: [third_party, vscode]
 
-- name: Check for VSCode repo
-  ansible.builtin.stat:
+# The `code` deb package's postinst writes /etc/apt/sources.list.d/vscode.sources
+# (deb822) with Signed-By=/usr/share/keyrings/microsoft.gpg. To avoid an apt
+# "conflicting values set for option Signed-By" error, we write the same file
+# with the same keyring path before installing — the postinst then overwrites
+# it with identical content. Any legacy vscode.list / microsoft-keyring.gpg
+# from older runs of this role is removed.
+- name: Remove legacy VSCode source list (replaced by vscode.sources)
+  ansible.builtin.file:
     path: /etc/apt/sources.list.d/vscode.list
-  register: ubuntu_vscode_installed
+    state: absent
+  become: true
+  when: vscode_probe.status | default(0) == 200
+  tags: [third_party, vscode]
+
+- name: Remove legacy Microsoft keyring (replaced by microsoft.gpg)
+  ansible.builtin.file:
+    path: /usr/share/keyrings/microsoft-keyring.gpg
+    state: absent
+  become: true
   when: vscode_probe.status | default(0) == 200
   tags: [third_party, vscode]
 
@@ -34,23 +49,27 @@
 
 - name: Install Microsoft (VSCode) signing key (dearmored)
   ansible.builtin.shell:
-    cmd: gpg --dearmor < /tmp/microsoft-keyring.asc > /usr/share/keyrings/microsoft-keyring.gpg
-    creates: /usr/share/keyrings/microsoft-keyring.gpg
+    cmd: gpg --dearmor < /tmp/microsoft-keyring.asc > /usr/share/keyrings/microsoft.gpg
+    creates: /usr/share/keyrings/microsoft.gpg
   become: true
   when: vscode_probe.status | default(0) == 200
   tags: [third_party, vscode]
 
-- name: Add VSCode repo
-  ansible.builtin.apt_repository:
-    repo: "deb [arch=amd64 signed-by=/usr/share/keyrings/microsoft-keyring.gpg]
-      https://packages.microsoft.com/repos/code stable main"
-    state: present
-    filename: vscode
-    update_cache: false
-  when:
-    - vscode_probe.status | default(0) == 200
-    - not (ubuntu_vscode_installed.stat.exists | default(false))
+- name: Add VSCode repo (deb822, matches `code` postinst output)
+  ansible.builtin.copy:
+    dest: /etc/apt/sources.list.d/vscode.sources
+    content: |
+      Types: deb
+      URIs: https://packages.microsoft.com/repos/code
+      Suites: stable
+      Components: main
+      Architectures: amd64,arm64,armhf
+      Signed-By: /usr/share/keyrings/microsoft.gpg
+    owner: root
+    group: root
+    mode: '0644'
   become: true
+  when: vscode_probe.status | default(0) == 200
   register: vscode_repo_added
   tags: [third_party, vscode]
 
