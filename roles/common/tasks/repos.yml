@@ -54,6 +54,24 @@
 # HashiCorp — store the dearmored key in /usr/share/keyrings and
 # reference it with signed-by= so apt sources line up cleanly with any
 # package-shipped source list (avoids "Conflicting Signed-By" errors).
+#
+# HashiCorp's apt repo is keyed on the Ubuntu release codename, so a brand-new
+# (or very old) Ubuntu won't have a matching pocket. Probe it before adding
+# the source — otherwise the next `apt update` would fail hard with 404s.
+- name: Probe HashiCorp repo for current Ubuntu release
+  ansible.builtin.uri:
+    url: "https://apt.releases.hashicorp.com/dists/{{ ansible_distribution_release }}/Release"
+    method: HEAD
+    status_code: [200, 301, 302]
+  register: common_hashicorp_probe
+  failed_when: false
+  changed_when: false
+
+- name: Note unsupported HashiCorp release
+  ansible.builtin.debug:
+    msg: "HashiCorp apt repo has no pocket for '{{ ansible_distribution_release }}' — skipping."
+  when: common_hashicorp_probe.status | default(0) != 200
+
 - name: Fetch HashiCorp signing key
   ansible.builtin.get_url:
     url: https://apt.releases.hashicorp.com/gpg
@@ -61,12 +79,14 @@
     mode: '0644'
     force: false
   become: true
+  when: common_hashicorp_probe.status | default(0) == 200
 
 - name: Install HashiCorp signing key (dearmored)
   ansible.builtin.shell:
     cmd: gpg --dearmor < /tmp/hashicorp-archive-keyring.asc > /usr/share/keyrings/hashicorp-archive-keyring.gpg
     creates: /usr/share/keyrings/hashicorp-archive-keyring.gpg
   become: true
+  when: common_hashicorp_probe.status | default(0) == 200
 
 - name: Add HashiCorp repository
   ansible.builtin.apt_repository:
@@ -76,10 +96,26 @@
     filename: hashicorp
     update_cache: false
   become: true
+  register: common_hashicorp_repo
+  when: common_hashicorp_probe.status | default(0) == 200
 
 # 1Password — must use signed-by=/usr/share/keyrings/1password-archive-keyring.gpg
 # to match the source list shipped by the 1password package itself; otherwise
 # apt refuses to load the conflicting source.
+- name: Probe 1Password apt repo
+  ansible.builtin.uri:
+    url: https://downloads.1password.com/linux/debian/amd64/dists/stable/Release
+    method: HEAD
+    status_code: [200, 301, 302]
+  register: common_onepassword_probe
+  failed_when: false
+  changed_when: false
+
+- name: Note unreachable 1Password repo
+  ansible.builtin.debug:
+    msg: "1Password apt repo unreachable — skipping."
+  when: common_onepassword_probe.status | default(0) != 200
+
 - name: Fetch 1Password signing key
   ansible.builtin.get_url:
     url: https://downloads.1password.com/linux/keys/1password.asc
@@ -87,12 +123,14 @@
     mode: '0644'
     force: false
   become: true
+  when: common_onepassword_probe.status | default(0) == 200
 
 - name: Install 1Password signing key (dearmored)
   ansible.builtin.shell:
     cmd: gpg --dearmor < /tmp/1password-archive-keyring.asc > /usr/share/keyrings/1password-archive-keyring.gpg
     creates: /usr/share/keyrings/1password-archive-keyring.gpg
   become: true
+  when: common_onepassword_probe.status | default(0) == 200
 
 - name: Add 1Password repository
   ansible.builtin.apt_repository:
@@ -102,11 +140,21 @@
     filename: 1password
     update_cache: false
   become: true
+  register: common_onepassword_repo
+  when: common_onepassword_probe.status | default(0) == 200
 
-# Single apt-update at the end — picks up the two new third-party repos
-# we just added without each apt_repository task triggering its own.
+# Surface repo-availability flags so later roles (packages.yml) can skip
+# installs for repos that weren't added.
+- name: Record external repo availability
+  ansible.builtin.set_fact:
+    common_hashicorp_repo_available: "{{ common_hashicorp_probe.status | default(0) == 200 }}"
+    common_onepassword_repo_available: "{{ common_onepassword_probe.status | default(0) == 200 }}"
+
+# Single apt-update at the end — only fires when one of the repos above
+# actually changed, so re-runs against an already-configured box are a no-op.
 - name: Refresh apt metadata
   ansible.builtin.apt:
     update_cache: true
   become: true
   changed_when: false
+  when: (common_hashicorp_repo is changed) or (common_onepassword_repo is changed)

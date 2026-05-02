@@ -3,9 +3,17 @@
   ansible.builtin.apt_repository:
     repo: "deb http://archive.ubuntu.com/ubuntu {{ ansible_distribution_release }} multiverse"
     state: present
-    update_cache: true
-    cache_valid_time: 3600
+    update_cache: false
   become: true
+  register: steam_multiverse_added
+  tags: [third_party, steam]
+
+- name: Refresh apt cache after enabling multiverse for Steam  # noqa: no-handler
+  ansible.builtin.apt:
+    update_cache: true
+  become: true
+  when: steam_multiverse_added is changed
+  changed_when: false
   tags: [third_party, steam]
 
 - name: Install Steam

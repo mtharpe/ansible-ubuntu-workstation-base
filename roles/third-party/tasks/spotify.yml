@@ -1,8 +1,25 @@
 ---
+- name: Probe Spotify apt repo
+  ansible.builtin.uri:
+    url: http://repository.spotify.com/dists/stable/Release
+    method: HEAD
+    status_code: [200, 301, 302]
+  register: spotify_probe
+  failed_when: false
+  changed_when: false
+  tags: [third_party, spotify]
+
+- name: Note unreachable Spotify repo
+  ansible.builtin.debug:
+    msg: "Spotify apt repo unreachable — skipping."
+  when: spotify_probe.status | default(0) != 200
+  tags: [third_party, spotify]
+
 - name: Check for Spotify repo
   ansible.builtin.stat:
     path: /etc/apt/sources.list.d/spotify.list
   register: ubuntu_spotify_installed
+  when: spotify_probe.status | default(0) == 200
   tags: [third_party, spotify]
 
 - name: Apt key for Spotify
@@ -10,7 +27,9 @@
     url: https://download.spotify.com/debian/pubkey_6224F9941A8AA6D1.gpg
     state: present
   become: true
-  when: not ubuntu_spotify_installed.stat.exists
+  when:
+    - spotify_probe.status | default(0) == 200
+    - not (ubuntu_spotify_installed.stat.exists | default(false))
   tags: [third_party, spotify]
 
 - name: Add Spotify repository
@@ -18,18 +37,28 @@
     repo: "deb http://repository.spotify.com stable non-free"
     state: present
     filename: spotify
-    update_cache: true
-    cache_valid_time: 3600
-  when: not ubuntu_spotify_installed.stat.exists
+    update_cache: false
+  when:
+    - spotify_probe.status | default(0) == 200
+    - not (ubuntu_spotify_installed.stat.exists | default(false))
   become: true
+  register: spotify_repo_added
+  tags: [third_party, spotify]
+
+- name: Refresh apt cache after adding Spotify repo  # noqa: no-handler
+  ansible.builtin.apt:
+    update_cache: true
+  become: true
+  when: spotify_repo_added is changed
+  changed_when: false
   tags: [third_party, spotify]
 
 - name: Install Spotify client
   ansible.builtin.apt:
     name: spotify-client
     state: present
-    update_cache: true
     cache_valid_time: 3600
   failed_when: false   # Repo occasionally lags new Ubuntu release; tolerate
   become: true
+  when: spotify_probe.status | default(0) == 200
   tags: [third_party, spotify]

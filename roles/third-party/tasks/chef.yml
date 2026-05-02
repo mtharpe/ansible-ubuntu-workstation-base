@@ -5,11 +5,41 @@
   register: chef_installed
   tags: [third_party, chef]
 
+# Chef ships per-Ubuntu-release debs. Probe the URL for the running release
+# first; if Chef hasn't published a build for it, skip rather than installing
+# a 22.04 deb on (e.g.) 24.04 and hoping it works.
+- name: Compute Chef Workstation deb URL for current release
+  ansible.builtin.set_fact:
+    chef_deb_url: "https://packages.chef.io/files/stable/chef-workstation/22.1.745/ubuntu/{{ ansible_distribution_version }}/chef-workstation_22.1.745-1_amd64.deb"
+  when: not chef_installed.stat.exists
+  tags: [third_party, chef]
+
+- name: Probe Chef Workstation deb for current Ubuntu release
+  ansible.builtin.uri:
+    url: "{{ chef_deb_url }}"
+    method: HEAD
+    status_code: [200, 301, 302]
+  register: chef_probe
+  failed_when: false
+  changed_when: false
+  when: not chef_installed.stat.exists
+  tags: [third_party, chef]
+
+- name: Note unavailable Chef Workstation deb
+  ansible.builtin.debug:
+    msg: "Chef Workstation 22.1.745 deb not published for Ubuntu {{ ansible_distribution_version }} — skipping."
+  when:
+    - not chef_installed.stat.exists
+    - chef_probe.status | default(0) != 200
+  tags: [third_party, chef]
+
 - name: Install Chef Workstation
   ansible.builtin.apt:
-    deb: https://packages.chef.io/files/stable/chef-workstation/22.1.745/ubuntu/22.04/chef-workstation_22.1.745-1_amd64.deb
+    deb: "{{ chef_deb_url }}"
     state: present
   retries: 3
-  when: not chef_installed.stat.exists
+  when:
+    - not chef_installed.stat.exists
+    - chef_probe.status | default(0) == 200
   become: true
   tags: [third_party, chef]

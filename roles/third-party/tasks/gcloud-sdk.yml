@@ -1,15 +1,33 @@
 ---
+- name: Probe Google Cloud SDK apt repo
+  ansible.builtin.uri:
+    url: https://packages.cloud.google.com/apt/dists/cloud-sdk/Release
+    method: HEAD
+    status_code: [200, 301, 302]
+  register: gcloud_probe
+  failed_when: false
+  changed_when: false
+  tags: [third_party, gcloud]
+
+- name: Note unreachable Google Cloud SDK repo
+  ansible.builtin.debug:
+    msg: "Google Cloud SDK apt repo unreachable — skipping."
+  when: gcloud_probe.status | default(0) != 200
+  tags: [third_party, gcloud]
+
 - name: Apt key for Google Cloud SDK
   ansible.builtin.apt_key:
     url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
     state: present
   become: true
+  when: gcloud_probe.status | default(0) == 200
   tags: [third_party, gcloud]
 
 - name: Check if Google Cloud repo file exists
   ansible.builtin.stat:
     path: /etc/apt/sources.list.d/google-cloud-sdk.list
   register: gcloud_repo
+  when: gcloud_probe.status | default(0) == 200
   tags: [third_party, gcloud]
 
 - name: Add Google Cloud SDK repository
@@ -17,10 +35,20 @@
     repo: "deb https://packages.cloud.google.com/apt cloud-sdk main"
     state: present
     filename: google-cloud-sdk
-    update_cache: true
-    cache_valid_time: 3600
-  when: not gcloud_repo.stat.exists
+    update_cache: false
+  when:
+    - gcloud_probe.status | default(0) == 200
+    - not (gcloud_repo.stat.exists | default(false))
   become: true
+  register: gcloud_repo_added
+  tags: [third_party, gcloud]
+
+- name: Refresh apt cache after adding Google Cloud SDK repo  # noqa: no-handler
+  ansible.builtin.apt:
+    update_cache: true
+  become: true
+  when: gcloud_repo_added is changed
+  changed_when: false
   tags: [third_party, gcloud]
 
 - name: Install Google Cloud SDK packages
@@ -29,7 +57,7 @@
       - google-cloud-sdk
       - kubectl
     state: present
-    update_cache: true
     cache_valid_time: 3600
   become: true
+  when: gcloud_probe.status | default(0) == 200
   tags: [third_party, gcloud]

@@ -1,8 +1,25 @@
 ---
+- name: Probe VSCode apt repo
+  ansible.builtin.uri:
+    url: https://packages.microsoft.com/repos/code/dists/stable/Release
+    method: HEAD
+    status_code: [200, 301, 302]
+  register: vscode_probe
+  failed_when: false
+  changed_when: false
+  tags: [third_party, vscode]
+
+- name: Note unreachable VSCode repo
+  ansible.builtin.debug:
+    msg: "VSCode apt repo unreachable — skipping."
+  when: vscode_probe.status | default(0) != 200
+  tags: [third_party, vscode]
+
 - name: Check for VSCode repo
   ansible.builtin.stat:
     path: /etc/apt/sources.list.d/vscode.list
   register: ubuntu_vscode_installed
+  when: vscode_probe.status | default(0) == 200
   tags: [third_party, vscode]
 
 - name: Apt key for Microsoft (VSCode)
@@ -10,6 +27,7 @@
     url: https://packages.microsoft.com/keys/microsoft.asc
     state: present
   become: true
+  when: vscode_probe.status | default(0) == 200
   tags: [third_party, vscode]
 
 - name: Add VSCode repo
@@ -17,17 +35,27 @@
     repo: "deb [arch=amd64] https://packages.microsoft.com/repos/code stable main"
     state: present
     filename: vscode
-    update_cache: true
-    cache_valid_time: 3600
-  when: not ubuntu_vscode_installed.stat.exists
+    update_cache: false
+  when:
+    - vscode_probe.status | default(0) == 200
+    - not (ubuntu_vscode_installed.stat.exists | default(false))
   become: true
+  register: vscode_repo_added
+  tags: [third_party, vscode]
+
+- name: Refresh apt cache after adding VSCode repo  # noqa: no-handler
+  ansible.builtin.apt:
+    update_cache: true
+  become: true
+  when: vscode_repo_added is changed
+  changed_when: false
   tags: [third_party, vscode]
 
 - name: Install VSCode
   ansible.builtin.apt:
     name: code
     state: present
-    update_cache: true
     cache_valid_time: 3600
   become: true
+  when: vscode_probe.status | default(0) == 200
   tags: [third_party, vscode]

@@ -1,9 +1,10 @@
 ---
-# Install extra packages
+# Install extra packages. Repo-gated packages (1Password, HashiCorp tools) are
+# split into separate tasks below so a missing/unsupported third-party repo
+# doesn't fail the whole base install.
 - name: Install base packages
   ansible.builtin.apt:
     name:
-      - 1password
       - direnv
       - fail2ban
       - arpwatch
@@ -34,11 +35,6 @@
       - tmux
       - transmission
       - neovim
-      - terraform
-      - vault
-      - consul
-      - nomad
-      - packer
       - python3-psutil
       - python3-pip
       - python3-termcolor
@@ -50,9 +46,29 @@
       - gnome-extensions-app
       - gnome-tweaks
     state: present
-    update_cache: true
     cache_valid_time: 3600
   become: true
+
+- name: Install 1Password (only if its apt repo was added)
+  ansible.builtin.apt:
+    name: 1password
+    state: present
+    cache_valid_time: 3600
+  become: true
+  when: common_onepassword_repo_available | default(false)
+
+- name: Install HashiCorp tools (only if its apt repo was added)
+  ansible.builtin.apt:
+    name:
+      - terraform
+      - vault
+      - consul
+      - nomad
+      - packer
+    state: present
+    cache_valid_time: 3600
+  become: true
+  when: common_hashicorp_repo_available | default(false)
 
 # Ansible itself is a prerequisite to run this playbook, so re-installing via apt
 # is redundant. Skip in containers because the Ubuntu `ansible` package

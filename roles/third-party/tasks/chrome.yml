@@ -1,15 +1,33 @@
 ---
+- name: Probe Google Chrome apt repo
+  ansible.builtin.uri:
+    url: http://dl.google.com/linux/chrome/deb/dists/stable/Release
+    method: HEAD
+    status_code: [200, 301, 302]
+  register: chrome_probe
+  failed_when: false
+  changed_when: false
+  tags: [third_party, chrome]
+
+- name: Note unreachable Google Chrome repo
+  ansible.builtin.debug:
+    msg: "Google Chrome apt repo unreachable — skipping."
+  when: chrome_probe.status | default(0) != 200
+  tags: [third_party, chrome]
+
 - name: Apt key for Google Chrome
   ansible.builtin.apt_key:
     url: https://dl.google.com/linux/linux_signing_key.pub
     state: present
   become: true
+  when: chrome_probe.status | default(0) == 200
   tags: [third_party, chrome]
 
 - name: Check if Google Chrome repo exists
   ansible.builtin.stat:
     path: /etc/apt/sources.list.d/google-chrome.list
   register: google_chrome_repo
+  when: chrome_probe.status | default(0) == 200
   tags: [third_party, chrome]
 
 - name: Add Google Chrome repository
@@ -17,19 +35,29 @@
     repo: "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main"
     state: present
     filename: google-chrome
-    update_cache: true
-    cache_valid_time: 3600
-  when: not google_chrome_repo.stat.exists
+    update_cache: false
+  when:
+    - chrome_probe.status | default(0) == 200
+    - not (google_chrome_repo.stat.exists | default(false))
   become: true
+  register: google_chrome_repo_added
+  tags: [third_party, chrome]
+
+- name: Refresh apt cache after adding Google Chrome repo  # noqa: no-handler
+  ansible.builtin.apt:
+    update_cache: true
+  become: true
+  when: google_chrome_repo_added is changed
+  changed_when: false
   tags: [third_party, chrome]
 
 - name: Install Google Chrome
   ansible.builtin.apt:
     name: google-chrome-stable
     state: present
-    update_cache: true
     cache_valid_time: 3600
   become: true
+  when: chrome_probe.status | default(0) == 200
   tags: [third_party, chrome]
 
 - name: Check for user google-chrome.desktop

@@ -11,21 +11,59 @@
   register: lutris_installed
   tags: [third_party, lutris]
 
+# Lutris PPA only publishes builds for currently-supported Ubuntu releases.
+# Probe the Launchpad pocket so a brand-new (or EOL) Ubuntu skips cleanly.
+- name: Probe Lutris PPA for current Ubuntu release
+  ansible.builtin.uri:
+    url: "https://ppa.launchpadcontent.net/lutris-team/lutris/ubuntu/dists/{{ ansible_distribution_release }}/Release"
+    method: HEAD
+    status_code: [200, 301, 302]
+  register: lutris_probe
+  failed_when: false
+  changed_when: false
+  when: not lutris_installed.stat.exists
+  tags: [third_party, lutris]
+
+- name: Note unsupported Lutris release
+  ansible.builtin.debug:
+    msg: "Lutris PPA has no pocket for '{{ ansible_distribution_release }}' — skipping Lutris install."
+  when:
+    - not lutris_installed.stat.exists
+    - lutris_probe.status | default(0) != 200
+  tags: [third_party, lutris]
+
+- name: Set Lutris-supported flag
+  ansible.builtin.set_fact:
+    lutris_supported: "{{ lutris_installed.stat.exists or (lutris_probe.status | default(0) == 200) }}"
+  tags: [third_party, lutris]
+
 - name: Add Lutris PPA
   ansible.builtin.apt_repository:
     repo: ppa:lutris-team/lutris
     state: present
-    update_cache: true
-    cache_valid_time: 3600
+    update_cache: false
   become: true
-  when: not lutris_installed.stat.exists
+  when:
+    - not lutris_installed.stat.exists
+    - lutris_supported
+  register: lutris_repo_added
+  tags: [third_party, lutris]
+
+- name: Refresh apt cache after adding Lutris PPA  # noqa: no-handler
+  ansible.builtin.apt:
+    update_cache: true
+  become: true
+  when: lutris_repo_added is changed
+  changed_when: false
   tags: [third_party, lutris]
 
 - name: Install Wine
   ansible.builtin.apt:
     name: wine
     state: present
-  when: not wine_installed.stat.exists
+  when:
+    - not wine_installed.stat.exists
+    - lutris_supported
   become: true
   tags: [third_party, lutris]
 
@@ -33,7 +71,9 @@
   ansible.builtin.apt:
     name: lutris
     state: present
-  when: not lutris_installed.stat.exists
+  when:
+    - not lutris_installed.stat.exists
+    - lutris_supported
   become: true
   tags: [third_party, lutris]
 
@@ -44,7 +84,9 @@
       - mesa-vulkan-drivers
       - vulkan-tools
     state: present
-  when: not lutris_installed.stat.exists
+  when:
+    - not lutris_installed.stat.exists
+    - lutris_supported
   become: true
   tags: [third_party, lutris]
 
@@ -56,7 +98,9 @@
       - libldap-2.5-0
       - libgpg-error0
     state: present
-  when: not lutris_installed.stat.exists
+  when:
+    - not lutris_installed.stat.exists
+    - lutris_supported
   become: true
   failed_when: false
   tags: [third_party, lutris]
