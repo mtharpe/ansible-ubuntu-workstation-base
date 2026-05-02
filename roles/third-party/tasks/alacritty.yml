@@ -1,4 +1,13 @@
 ---
+- name: Remove conflicting Alacritty snap
+  ansible.builtin.include_tasks:
+    file: remove-snap.yml
+    apply:
+      tags: [third_party, alacritty]
+  vars:
+    snap_names: [alacritty]
+  tags: [third_party, alacritty]
+
 - name: Create a directory if it does not exist
   ansible.builtin.file:
     path: /home/{{ local_user }}/.config/alacritty

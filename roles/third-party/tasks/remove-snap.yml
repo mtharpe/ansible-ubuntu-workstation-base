@@ -1,0 +1,32 @@
+---
+# Reusable helper: remove conflicting snap packages before installing the
+# apt/deb/binary version handled elsewhere in the role.
+#
+# Caller passes `snap_names` (list[str]). On hosts without snapd this is a
+# no-op. Each named snap is probed with `snap list <name>` and only removed
+# if currently installed, so the helper is safe to call unconditionally.
+- name: Detect snap CLI
+  ansible.builtin.stat:
+    path: /usr/bin/snap
+  register: remove_snap_bin
+  changed_when: false
+
+- name: Probe installed snaps  # noqa: command-instead-of-module
+  ansible.builtin.command:
+    cmd: snap list {{ item }}
+  register: remove_snap_probe
+  changed_when: false
+  failed_when: false
+  loop: "{{ snap_names }}"
+  when: remove_snap_bin.stat.exists
+
+- name: Remove conflicting snaps  # noqa: command-instead-of-module
+  ansible.builtin.command:
+    cmd: snap remove --purge {{ item.item }}
+  become: true
+  loop: "{{ remove_snap_probe.results | default([]) }}"
+  loop_control:
+    label: "{{ item.item }}"
+  when:
+    - remove_snap_bin.stat.exists
+    - item.rc | default(1) == 0

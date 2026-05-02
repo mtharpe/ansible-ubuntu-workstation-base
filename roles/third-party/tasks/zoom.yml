@@ -1,4 +1,13 @@
 ---
+- name: Remove conflicting Zoom snap
+  ansible.builtin.include_tasks:
+    file: remove-snap.yml
+    apply:
+      tags: [third_party, zoom]
+  vars:
+    snap_names: [zoom-client]
+  tags: [third_party, zoom]
+
 - name: Download Zoom deb
   ansible.builtin.get_url:
     url: https://zoom.us/client/latest/zoom_amd64.deb

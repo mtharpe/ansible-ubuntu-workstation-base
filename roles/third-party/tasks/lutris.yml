@@ -1,4 +1,13 @@
 ---
+- name: Remove conflicting Lutris snap
+  ansible.builtin.include_tasks:
+    file: remove-snap.yml
+    apply:
+      tags: [third_party, lutris]
+  vars:
+    snap_names: [lutris]
+  tags: [third_party, lutris]
+
 - name: Check for Wine
   ansible.builtin.stat:
     path: /usr/bin/wine

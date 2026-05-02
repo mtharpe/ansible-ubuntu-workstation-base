@@ -1,4 +1,13 @@
 ---
+- name: Remove conflicting Steam snap
+  ansible.builtin.include_tasks:
+    file: remove-snap.yml
+    apply:
+      tags: [third_party, steam]
+  vars:
+    snap_names: [steam]
+  tags: [third_party, steam]
+
 - name: Enable multiverse repository for Steam
   ansible.builtin.apt_repository:
     repo: "deb http://archive.ubuntu.com/ubuntu {{ ansible_facts['distribution_release'] }} multiverse"

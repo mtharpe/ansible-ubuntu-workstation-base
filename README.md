@@ -9,7 +9,7 @@ Ansible playbook and role collection that automates the setup of an **Ubuntu 24.
 Configures an Ubuntu workstation with:
 
 - **Common packages** — developer tooling, fonts, multimedia codecs, system utilities (`roles/common`)
-- **Third-party apps** — Chrome, VS Code, Slack, Zoom, Docker, etc., gated by feature flags (`roles/third-party`)
+- **Third-party apps** — Chrome, VS Code, Slack, Zoom, Docker, etc., gated by feature flags (`roles/third-party`). Each install removes any conflicting snap of the same package first, so the apt/deb version is the one that runs.
 - **GNOME settings** — sensible dconf defaults, dark theme, workspace layout (`roles/gnome`)
 - **Shell setup** — bash or fish with TPM, Starship, FiraCode Nerd Font (toggle in `vars/vars.yml`)
 - **Hardening** — sshd config, fail2ban, ufw desktop firewall (opt-in)
@@ -104,6 +104,7 @@ ansible-playbook --syntax-check setup_workstation.yml
 - Add/remove packages: `roles/common/tasks/packages.yml`
 - System tweaks: `roles/common/tasks/system.yml` and `roles/common/tasks/harden.yml`
 - Drop dotfiles into `templates/` and reference them from a role task
+- Snap-conflict removal: include `roles/third-party/tasks/remove-snap.yml` from any new install task and pass `snap_names: [<name>, ...]` — it's a no-op if snapd isn't present or the snap isn't installed
 
 ## Related
 

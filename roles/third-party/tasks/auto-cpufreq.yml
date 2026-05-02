@@ -1,4 +1,13 @@
 ---
+- name: Remove conflicting Auto-CPUFreq snap
+  ansible.builtin.include_tasks:
+    file: remove-snap.yml
+    apply:
+      tags: [third_party, autocpu]
+  vars:
+    snap_names: [auto-cpufreq]
+  tags: [third_party, autocpu]
+
 - name: Clone Auto-CPUFreq repository
   ansible.builtin.git:
     repo: https://github.com/AdnanHodzic/auto-cpufreq.git

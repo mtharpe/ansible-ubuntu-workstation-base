@@ -1,4 +1,13 @@
 ---
+- name: Remove conflicting Spotify snap
+  ansible.builtin.include_tasks:
+    file: remove-snap.yml
+    apply:
+      tags: [third_party, spotify]
+  vars:
+    snap_names: [spotify]
+  tags: [third_party, spotify]
+
 - name: Probe Spotify apt repo
   ansible.builtin.uri:
     url: http://repository.spotify.com/dists/stable/Release

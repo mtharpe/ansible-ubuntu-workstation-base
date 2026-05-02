@@ -1,4 +1,16 @@
 ---
+- name: Remove conflicting Google Cloud SDK snap
+  ansible.builtin.include_tasks:
+    file: remove-snap.yml
+    apply:
+      tags: [third_party, gcloud]
+  vars:
+    snap_names:
+      - google-cloud-cli
+      - google-cloud-sdk
+      - kubectl
+  tags: [third_party, gcloud]
+
 - name: Probe Google Cloud SDK apt repo
   ansible.builtin.uri:
     url: https://packages.cloud.google.com/apt/dists/cloud-sdk/Release

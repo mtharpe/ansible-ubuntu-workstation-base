@@ -1,4 +1,13 @@
 ---
+- name: Remove conflicting Docker snap
+  ansible.builtin.include_tasks:
+    file: remove-snap.yml
+    apply:
+      tags: [third_party, docker]
+  vars:
+    snap_names: [docker]
+  tags: [third_party, docker]
+
 - name: Remove legacy Docker packages
   ansible.builtin.apt:
     name:

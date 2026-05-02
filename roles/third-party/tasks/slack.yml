@@ -1,4 +1,13 @@
 ---
+- name: Remove conflicting Slack snap
+  ansible.builtin.include_tasks:
+    file: remove-snap.yml
+    apply:
+      tags: [third_party, slack]
+  vars:
+    snap_names: [slack]
+  tags: [third_party, slack]
+
 - name: Check if Slack is already installed
   ansible.builtin.command:
     cmd: dpkg -s slack-desktop
