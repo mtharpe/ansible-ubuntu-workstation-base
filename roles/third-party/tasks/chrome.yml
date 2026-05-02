@@ -15,10 +15,22 @@
   when: chrome_probe.status | default(0) != 200
   tags: [third_party, chrome]
 
-- name: Apt key for Google Chrome
-  ansible.builtin.apt_key:
+# apt-key is removed on modern Ubuntu — store the dearmored key in
+# /usr/share/keyrings and reference it with signed-by= on the source line.
+- name: Fetch Google Chrome signing key
+  ansible.builtin.get_url:
     url: https://dl.google.com/linux/linux_signing_key.pub
-    state: present
+    dest: /tmp/google-chrome-keyring.asc
+    mode: '0644'
+    force: false
+  become: true
+  when: chrome_probe.status | default(0) == 200
+  tags: [third_party, chrome]
+
+- name: Install Google Chrome signing key (dearmored)
+  ansible.builtin.shell:
+    cmd: gpg --dearmor < /tmp/google-chrome-keyring.asc > /usr/share/keyrings/google-chrome-keyring.gpg
+    creates: /usr/share/keyrings/google-chrome-keyring.gpg
   become: true
   when: chrome_probe.status | default(0) == 200
   tags: [third_party, chrome]
@@ -32,7 +44,8 @@
 
 - name: Add Google Chrome repository
   ansible.builtin.apt_repository:
-    repo: "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main"
+    repo: "deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome-keyring.gpg]
+      http://dl.google.com/linux/chrome/deb/ stable main"
     state: present
     filename: google-chrome
     update_cache: false

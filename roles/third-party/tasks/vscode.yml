@@ -22,17 +22,28 @@
   when: vscode_probe.status | default(0) == 200
   tags: [third_party, vscode]
 
-- name: Apt key for Microsoft (VSCode)
-  ansible.builtin.apt_key:
+- name: Fetch Microsoft (VSCode) signing key
+  ansible.builtin.get_url:
     url: https://packages.microsoft.com/keys/microsoft.asc
-    state: present
+    dest: /tmp/microsoft-keyring.asc
+    mode: '0644'
+    force: false
+  become: true
+  when: vscode_probe.status | default(0) == 200
+  tags: [third_party, vscode]
+
+- name: Install Microsoft (VSCode) signing key (dearmored)
+  ansible.builtin.shell:
+    cmd: gpg --dearmor < /tmp/microsoft-keyring.asc > /usr/share/keyrings/microsoft-keyring.gpg
+    creates: /usr/share/keyrings/microsoft-keyring.gpg
   become: true
   when: vscode_probe.status | default(0) == 200
   tags: [third_party, vscode]
 
 - name: Add VSCode repo
   ansible.builtin.apt_repository:
-    repo: "deb [arch=amd64] https://packages.microsoft.com/repos/code stable main"
+    repo: "deb [arch=amd64 signed-by=/usr/share/keyrings/microsoft-keyring.gpg]
+      https://packages.microsoft.com/repos/code stable main"
     state: present
     filename: vscode
     update_cache: false

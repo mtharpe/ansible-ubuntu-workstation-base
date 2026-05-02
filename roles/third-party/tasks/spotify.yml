@@ -22,10 +22,22 @@
   when: spotify_probe.status | default(0) == 200
   tags: [third_party, spotify]
 
-- name: Apt key for Spotify
-  ansible.builtin.apt_key:
+- name: Fetch Spotify signing key
+  ansible.builtin.get_url:
     url: https://download.spotify.com/debian/pubkey_6224F9941A8AA6D1.gpg
-    state: present
+    dest: /tmp/spotify-keyring.gpg
+    mode: '0644'
+    force: false
+  become: true
+  when:
+    - spotify_probe.status | default(0) == 200
+    - not (ubuntu_spotify_installed.stat.exists | default(false))
+  tags: [third_party, spotify]
+
+- name: Install Spotify signing key (dearmored)
+  ansible.builtin.shell:
+    cmd: gpg --dearmor < /tmp/spotify-keyring.gpg > /usr/share/keyrings/spotify-keyring.gpg
+    creates: /usr/share/keyrings/spotify-keyring.gpg
   become: true
   when:
     - spotify_probe.status | default(0) == 200
@@ -34,7 +46,8 @@
 
 - name: Add Spotify repository
   ansible.builtin.apt_repository:
-    repo: "deb http://repository.spotify.com stable non-free"
+    repo: "deb [signed-by=/usr/share/keyrings/spotify-keyring.gpg]
+      http://repository.spotify.com stable non-free"
     state: present
     filename: spotify
     update_cache: false
