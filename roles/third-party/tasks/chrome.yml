@@ -15,8 +15,32 @@
   when: chrome_probe.status | default(0) != 200
   tags: [third_party, chrome]
 
-# apt-key is removed on modern Ubuntu — store the dearmored key in
-# /usr/share/keyrings and reference it with signed-by= on the source line.
+# The `google-chrome-stable` deb's postinst writes
+# /etc/apt/sources.list.d/google-chrome.sources (deb822) with
+# Signed-By=/usr/share/keyrings/google-chrome.gpg and
+# URIs=https://dl.google.com/linux/chrome-stable/deb/. Write the same file
+# (and use the same keyring path) ourselves so the repo is available for the
+# install, and so that after install the two configurations don't disagree —
+# which previously double-fetched chrome metadata and could trigger
+# Signed-By/duplicate-target apt warnings. Any legacy google-chrome.list /
+# google-chrome-keyring.gpg from prior runs is removed.
+- name: Remove legacy Google Chrome source list (replaced by google-chrome.sources)
+  ansible.builtin.file:
+    path: /etc/apt/sources.list.d/google-chrome.list
+    state: absent
+  become: true
+  when: chrome_probe.status | default(0) == 200
+  register: google_chrome_legacy_list
+  tags: [third_party, chrome]
+
+- name: Remove legacy Google Chrome keyring (replaced by google-chrome.gpg)
+  ansible.builtin.file:
+    path: /usr/share/keyrings/google-chrome-keyring.gpg
+    state: absent
+  become: true
+  when: chrome_probe.status | default(0) == 200
+  tags: [third_party, chrome]
+
 - name: Fetch Google Chrome signing key
   ansible.builtin.get_url:
     url: https://dl.google.com/linux/linux_signing_key.pub
@@ -29,30 +53,27 @@
 
 - name: Install Google Chrome signing key (dearmored)
   ansible.builtin.shell:
-    cmd: gpg --dearmor < /tmp/google-chrome-keyring.asc > /usr/share/keyrings/google-chrome-keyring.gpg
-    creates: /usr/share/keyrings/google-chrome-keyring.gpg
+    cmd: gpg --dearmor < /tmp/google-chrome-keyring.asc > /usr/share/keyrings/google-chrome.gpg
+    creates: /usr/share/keyrings/google-chrome.gpg
   become: true
   when: chrome_probe.status | default(0) == 200
   tags: [third_party, chrome]
 
-- name: Check if Google Chrome repo exists
-  ansible.builtin.stat:
-    path: /etc/apt/sources.list.d/google-chrome.list
-  register: google_chrome_repo
-  when: chrome_probe.status | default(0) == 200
-  tags: [third_party, chrome]
-
-- name: Add Google Chrome repository
-  ansible.builtin.apt_repository:
-    repo: "deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome-keyring.gpg]
-      http://dl.google.com/linux/chrome/deb/ stable main"
-    state: present
-    filename: google-chrome
-    update_cache: false
-  when:
-    - chrome_probe.status | default(0) == 200
-    - not (google_chrome_repo.stat.exists | default(false))
+- name: Add Google Chrome repo (deb822, matches `google-chrome-stable` postinst output)
+  ansible.builtin.copy:
+    dest: /etc/apt/sources.list.d/google-chrome.sources
+    content: |
+      X-Repolib-Name: Google Chrome
+      Types: deb
+      URIs: https://dl.google.com/linux/chrome-stable/deb/
+      Suites: stable
+      Components: main
+      Signed-By: /usr/share/keyrings/google-chrome.gpg
+    owner: root
+    group: root
+    mode: '0644'
   become: true
+  when: chrome_probe.status | default(0) == 200
   register: google_chrome_repo_added
   tags: [third_party, chrome]
 
@@ -60,7 +81,7 @@
   ansible.builtin.apt:
     update_cache: true
   become: true
-  when: google_chrome_repo_added is changed
+  when: (google_chrome_repo_added is changed) or (google_chrome_legacy_list is changed)
   changed_when: false
   tags: [third_party, chrome]
 
