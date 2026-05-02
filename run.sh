@@ -6,6 +6,10 @@ if ! command -v ansible >/dev/null 2>&1; then
   sudo apt-get install -y ansible
 fi
 
+# Ubuntu's apt-shipped ansible.posix is too old and emits a `to_native`
+# deprecation on every sysctl task. Pull the pinned versions from Galaxy.
+ansible-galaxy collection install -r requirements.yml --upgrade
+
 SUDOERS_DROPIN="/etc/sudoers.d/${USER}"
 if [ ! -f "${SUDOERS_DROPIN}" ]; then
   echo "${USER} ALL=(ALL) NOPASSWD: ALL" | sudo tee -a "${SUDOERS_DROPIN}"

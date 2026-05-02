@@ -1,0 +1,9 @@
+---
+# Pin collection versions that don't emit `Importing 'to_native' from
+# 'ansible.module_utils._text' is deprecated` against ansible-core 2.16+.
+# Ubuntu 24.04 ships an older ansible.posix via apt; this overrides it.
+collections:
+  - name: ansible.posix
+    version: ">=2.0.0"
+  - name: community.general
+    version: ">=8.0.0"
