@@ -30,6 +30,9 @@ install_fish: true
 install_starship: false
 install_nerd_font: true
 install_eza: true
+install_claude: false
+install_kubectl: false
+install_multipass: false
 
 # python3
 ansible_python_interpreter: /usr/bin/python3

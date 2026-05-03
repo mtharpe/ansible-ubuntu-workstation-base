@@ -1,9 +1,28 @@
 #!/bin/bash
 set -euo pipefail
 
-if ! command -v ansible >/dev/null 2>&1; then
+if ! command -v pipx >/dev/null 2>&1; then
   sudo apt-get update
-  sudo apt-get install -y ansible
+  sudo apt-get install -y pipx
+fi
+
+export PATH="${HOME}/.local/bin:${PATH}"
+
+if ! command -v ansible >/dev/null 2>&1; then
+  pipx install --include-deps ansible
+fi
+
+if ! command -v ansible-lint >/dev/null 2>&1; then
+  pipx install ansible-lint
+fi
+
+if ! command -v yamllint >/dev/null 2>&1; then
+  pipx install yamllint
+fi
+
+if ! command -v molecule >/dev/null 2>&1; then
+  pipx install --include-deps molecule
+  pipx inject molecule 'molecule-plugins[docker]'
 fi
 
 # Ubuntu's apt-shipped ansible.posix is too old and emits a `to_native`

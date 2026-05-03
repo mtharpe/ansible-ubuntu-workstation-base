@@ -50,3 +50,15 @@
 - name: Setup eza
   ansible.builtin.import_tasks: eza.yml
   when: install_eza | default(false)
+
+- name: Setup Claude Code
+  ansible.builtin.import_tasks: claude.yml
+  when: install_claude | default(false)
+
+- name: Setup kubectl
+  ansible.builtin.import_tasks: kubectl.yml
+  when: install_kubectl | default(false)
+
+- name: Setup Multipass
+  ansible.builtin.import_tasks: multipass.yml
+  when: install_multipass | default(false)
