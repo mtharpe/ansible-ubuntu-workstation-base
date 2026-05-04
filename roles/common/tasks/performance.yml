@@ -1,0 +1,48 @@
+---
+# Workstation performance tuning. Idempotent and skipped in containers.
+# Sysctl values target an interactive desktop with plenty of RAM:
+# - swappiness=10: keep things in RAM unless memory pressure is real
+# - vfs_cache_pressure=50: keep inode/dentry cache longer (faster file ops)
+# - dirty_ratio=10 / dirty_background_ratio=5: flush sooner so big writes
+#   don't stall interactive apps
+# - kernel.sysrq=1: enable SysRq for emergency keyboard recovery
+
+- name: Apply desktop performance sysctl
+  ansible.posix.sysctl:
+    name: "{{ item.name }}"
+    value: "{{ item.value }}"
+    sysctl_file: /etc/sysctl.d/99-ansible-performance.conf
+    reload: true
+  become: true
+  loop:
+    - { name: vm.swappiness, value: '10' }
+    - { name: vm.vfs_cache_pressure, value: '50' }
+    - { name: vm.dirty_ratio, value: '10' }
+    - { name: vm.dirty_background_ratio, value: '5' }
+    - { name: kernel.sysrq, value: '1' }
+  when: not is_container | default(false)
+
+- name: Enable fstrim.timer for periodic SSD trim
+  ansible.builtin.systemd:
+    name: fstrim.timer
+    enabled: true
+    state: started
+  become: true
+  when: not is_container | default(false)
+  failed_when: false
+
+# Ubuntu-specific: disable services that slow boot or run background
+# work for features we don't use on a workstation.
+- name: Disable Ubuntu services that hurt interactive performance
+  ansible.builtin.systemd:
+    name: "{{ item }}"
+    enabled: false
+    state: stopped
+    masked: true
+  become: true
+  loop:
+    - apport.service
+    - NetworkManager-wait-online.service
+    - motd-news.timer
+  when: not is_container | default(false)
+  failed_when: false

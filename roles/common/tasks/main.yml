@@ -14,6 +14,8 @@
   ansible.builtin.import_tasks: services.yml
 - name: Setup System
   ansible.builtin.import_tasks: system.yml
+- name: Apply Performance Tuning
+  ansible.builtin.import_tasks: performance.yml
 - name: Setup Harden
   ansible.builtin.import_tasks: harden.yml
 - name: Setup Bash
