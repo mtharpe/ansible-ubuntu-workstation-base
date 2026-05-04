@@ -54,6 +54,7 @@
     remote_src: true
   when:
     - not eza_apt_available
+    - not (eza_bin_stat.stat.exists | default(false))
     - not (eza_unpack_stat.stat.exists | default(false))
 
 - name: Move eza binary to /usr/local/bin
