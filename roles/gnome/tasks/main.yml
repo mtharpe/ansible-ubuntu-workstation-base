@@ -85,3 +85,14 @@
 
     - k: /org/gnome/shell/weather/locations
       v: "[<(uint32 2, <('Indianapolis', 'KIND', true, [(0.69333204535474746, -1.5059040078213661)], [(0.69408911682438501, -1.5037415099715601)])>)>]"
+
+- name: Disable Ubuntu Dock and Desktop Icons NG (ding) extensions
+  ansible.builtin.command: "gnome-extensions disable {{ item }}"
+  become: true
+  become_user: "{{ local_user }}"
+  when: not is_container | default(false)
+  changed_when: false
+  failed_when: false
+  loop:
+    - ubuntu-dock@ubuntu.com
+    - ding@rastersoft.com
