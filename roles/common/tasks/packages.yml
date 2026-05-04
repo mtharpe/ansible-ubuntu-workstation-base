@@ -244,3 +244,34 @@
     autoremove: true
   become: true
   failed_when: false
+
+# Ubuntu ships Firefox and Thunderbird as snaps; the apt remove above is a
+# no-op for those, so shadow their .desktop files with NoDisplay overrides
+# in the user's local applications directory. Harmless if a name doesn't
+# resolve to anything system-wide.
+- name: Ensure user applications directory exists
+  ansible.builtin.file:
+    path: /home/{{ local_user }}/.local/share/applications
+    state: directory
+    owner: "{{ local_user }}"
+    group: "{{ local_user }}"
+    mode: "0755"
+  become: true
+
+- name: Hide Firefox and Thunderbird launchers from GNOME Shell
+  ansible.builtin.copy:
+    dest: "/home/{{ local_user }}/.local/share/applications/{{ item }}"
+    owner: "{{ local_user }}"
+    group: "{{ local_user }}"
+    mode: "0644"
+    content: |
+      [Desktop Entry]
+      Type=Application
+      NoDisplay=true
+      Hidden=true
+  loop:
+    - firefox.desktop
+    - firefox_firefox.desktop
+    - firefox-esr.desktop
+    - thunderbird.desktop
+    - thunderbird_thunderbird.desktop

@@ -24,11 +24,6 @@
     group: "{{ local_user }}"
     mode: "0644"
 
-- name: Stat alacritty.desktop
-  ansible.builtin.stat:
-    path: /home/{{ local_user }}/.local/share/applications/alacritty.desktop
-  register: alacritty_desktop
-
 - name: Ensure user applications directory exists
   ansible.builtin.file:
     path: /home/{{ local_user }}/.local/share/applications
@@ -45,33 +40,32 @@
     owner: "{{ local_user }}"
     group: "{{ local_user }}"
     mode: "0644"
-  when: not alacritty_desktop.stat.exists
 
-- name: Stat Alacritty Desktop Icon
-  ansible.builtin.stat:
-    path: /usr/share/applications/Alacritty.desktop
-  register: alacritty_stat
-
-- name: Disable Alacritty Built-in icon
-  become: true
-  ansible.builtin.command: mv /usr/share/applications/Alacritty.desktop /usr/share/applications/Alacritty.desktop.not
-  when: alacritty_stat.stat.exists
-
-- name: Stat Gnome Terminal Desktop Icon
-  ansible.builtin.stat:
-    path: /usr/share/applications/org.gnome.Terminal.desktop
-  register: gnome_terminal_stat
-
-- name: Disable Gnome-Terminal Built-in icon
-  become: true
-  ansible.builtin.command: mv /usr/share/applications/org.gnome.Terminal.desktop /usr/share/applications/org.gnome.Terminal.desktop.not
-  when: gnome_terminal_stat.stat.exists
-
-- name: Setup cron to remove Alacritty.desktop every 30 minutes
-  become: true
+- name: Drop legacy Alacritty.desktop cleanup cron (replaced by user overrides)
   ansible.builtin.cron:
     name: "Remove Alacritty.desktop"
-    minute: "*/30"
-    job: "rm -f /usr/share/applications/Alacritty.desktop"
+    state: absent
     user: root
-    state: present
+  become: true
+
+# Shadow the distro's default terminal launchers with empty user-level
+# overrides flagged NoDisplay/Hidden. This survives package updates
+# (unlike renaming the system .desktop) and avoids confusion with the
+# Alacritty launcher we ship as "Terminal".
+- name: Hide default distro terminal launchers from GNOME Shell
+  ansible.builtin.copy:
+    dest: "/home/{{ local_user }}/.local/share/applications/{{ item }}"
+    owner: "{{ local_user }}"
+    group: "{{ local_user }}"
+    mode: "0644"
+    content: |
+      [Desktop Entry]
+      Type=Application
+      NoDisplay=true
+      Hidden=true
+  loop:
+    - org.gnome.Terminal.desktop
+    - org.gnome.Console.desktop
+    - org.gnome.Ptyxis.desktop
+    - kgx.desktop
+    - Alacritty.desktop
