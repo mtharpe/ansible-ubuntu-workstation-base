@@ -104,6 +104,12 @@
     - k: /org/gnome/shell/weather/locations
       v: "[<(uint32 2, <('Indianapolis', 'KIND', true, [(0.69333204535474746, -1.5059040078213661)], [(0.69408911682438501, -1.5037415099715601)])>)>]"
 
+    - k: /org/gnome/clocks/world-clocks
+      v: "[{'location': <(uint32 2, <('New York', 'KNYC', true, [(0.71174266133038869, -1.2909618760458005)], [(0.71174266133038869, -1.2909618760458005)])>)>},
+        {'location': <(uint32 2, <('Chicago', 'KORD', true, [(0.73087131210925766, -1.5294370491003432)], [(0.73087131210925766, -1.5294370491003432)])>)>},
+        {'location': <(uint32 2, <('Denver', 'KDEN', true, [(0.69356499048035111, -1.8325180844752899)], [(0.69356499048035111, -1.8325180844752899)])>)>},
+        {'location': <(uint32 2, <('Los Angeles', 'KLAX', true, [(0.59441327990644397, -2.0636403894159987)], [(0.59441327990644397, -2.0636403894159987)])>)>}]"
+
 - name: Disable Ubuntu Dock and Desktop Icons NG (ding) extensions
   ansible.builtin.command: "gnome-extensions disable {{ item }}"
   become: true
