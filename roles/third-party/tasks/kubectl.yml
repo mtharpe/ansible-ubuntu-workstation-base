@@ -1,0 +1,72 @@
+---
+- name: Remove conflicting kubectl snap
+  ansible.builtin.include_tasks:
+    file: remove-snap.yml
+    apply:
+      tags: [third_party, kubectl]
+  vars:
+    snap_names: [kubectl]
+  tags: [third_party, kubectl]
+
+- name: Probe Kubernetes apt repo
+  ansible.builtin.uri:
+    url: "https://pkgs.k8s.io/core:/stable:/{{ kubectl_channel | default('v1.31') }}/deb/Release"
+    method: HEAD
+    status_code: [200, 301, 302]
+  register: kubectl_probe
+  failed_when: false
+  changed_when: false
+  tags: [third_party, kubectl]
+
+- name: Note unreachable Kubernetes repo
+  ansible.builtin.debug:
+    msg: "Kubernetes apt repo unreachable — skipping."
+  when: kubectl_probe.status | default(0) != 200
+  tags: [third_party, kubectl]
+
+- name: Fetch Kubernetes signing key
+  ansible.builtin.get_url:
+    url: "https://pkgs.k8s.io/core:/stable:/{{ kubectl_channel | default('v1.31') }}/deb/Release.key"
+    dest: /tmp/kubernetes-keyring.asc
+    mode: '0644'
+    force: false
+  become: true
+  when: kubectl_probe.status | default(0) == 200
+  tags: [third_party, kubectl]
+
+- name: Install Kubernetes signing key (dearmored)
+  ansible.builtin.shell:
+    cmd: gpg --dearmor < /tmp/kubernetes-keyring.asc > /usr/share/keyrings/kubernetes-keyring.gpg
+    creates: /usr/share/keyrings/kubernetes-keyring.gpg
+  become: true
+  when: kubectl_probe.status | default(0) == 200
+  tags: [third_party, kubectl]
+
+- name: Add Kubernetes apt repository
+  ansible.builtin.apt_repository:
+    repo: "deb [signed-by=/usr/share/keyrings/kubernetes-keyring.gpg]
+      https://pkgs.k8s.io/core:/stable:/{{ kubectl_channel | default('v1.31') }}/deb/ /"
+    state: present
+    filename: kubernetes
+    update_cache: false
+  become: true
+  when: kubectl_probe.status | default(0) == 200
+  register: kubectl_repo_added
+  tags: [third_party, kubectl]
+
+- name: Refresh apt cache after adding Kubernetes repo  # noqa: no-handler
+  ansible.builtin.apt:
+    update_cache: true
+  become: true
+  when: kubectl_repo_added is changed
+  changed_when: false
+  tags: [third_party, kubectl]
+
+- name: Install kubectl
+  ansible.builtin.apt:
+    name: kubectl
+    state: present
+    cache_valid_time: 3600
+  become: true
+  when: kubectl_probe.status | default(0) == 200
+  tags: [third_party, kubectl]

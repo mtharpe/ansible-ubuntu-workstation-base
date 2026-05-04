@@ -63,6 +63,10 @@ All toggles live in `vars/vars.yml`. The most useful ones:
 | `install_zoom` | `true` | Zoom client |
 | `install_docker` | `false` | docker.io + docker-compose (otherwise podman is the default) |
 | `install_gcloud` | `false` | Google Cloud SDK + kubectl |
+| `install_ansible` | `false` | Ansible (apt) for running playbooks locally |
+| `install_claude` | `false` | Claude Code CLI (official installer to `~/.local/bin`) |
+| `install_kubectl` | `false` | kubectl from the official Kubernetes apt repo (`pkgs.k8s.io`) |
+| `install_multipass` | `false` | Multipass via snap (snap is the only Linux distribution channel) |
 | `install_fish` | `true` | Fish shell + Pure prompt + Fisher |
 | `install_bash` | `false` | Bash dotfiles |
 | `install_nerd_font` | `true` | FiraCode Nerd Font for prompts/icons |
