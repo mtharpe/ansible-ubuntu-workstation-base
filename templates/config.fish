@@ -5,9 +5,7 @@ source ~/.config/fish/system.fish
 
 
 ## Set values
-## Run fastfetch as welcome message
 function fish_greeting
-    fastfetch
 end
 
 # Format man pages

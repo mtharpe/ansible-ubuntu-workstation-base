@@ -30,8 +30,8 @@ install_fish: true
 install_starship: false
 install_nerd_font: true
 install_eza: true
-install_claude: false
-install_kubectl: false
+install_claude: true
+install_kubectl: true
 install_multipass: false
 
 # python3

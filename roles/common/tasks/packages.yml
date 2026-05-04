@@ -103,13 +103,6 @@
   become: true
   failed_when: false
 
-- name: Install fastfetch when available
-  ansible.builtin.apt:
-    name: fastfetch
-    state: present
-  become: true
-  failed_when: false
-
 # Install molecule via pipx so it gets its own ansible-core in an isolated
 # venv. Avoids conflicting with the apt-installed `ansible` package the user
 # needed to bootstrap this playbook. Skipped in containers — molecule is a
