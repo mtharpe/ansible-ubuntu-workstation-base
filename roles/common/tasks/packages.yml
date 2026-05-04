@@ -189,7 +189,6 @@
     url: "https://github.com/ryanoasis/nerd-fonts/releases/latest/download/FiraCode.zip"
     dest: /tmp/FiraCode.zip
     mode: '0644'
-    force: true
   when:
     - install_nerd_font | default(false)
     - common_firacode_fonts.rc != 0
@@ -202,7 +201,9 @@
     group: root
     mode: '0755'
   become: true
-  when: install_nerd_font | default(false)
+  when:
+    - install_nerd_font | default(false)
+    - common_firacode_fonts.rc != 0
 
 - name: Unarchive FiraCode Nerd Font
   ansible.builtin.unarchive:
@@ -211,7 +212,9 @@
     remote_src: true
   become: true
   register: common_firacode_unarchive
-  when: install_nerd_font | default(false)
+  when:
+    - install_nerd_font | default(false)
+    - common_firacode_fonts.rc != 0
 
 - name: Refresh font cache
   ansible.builtin.command:

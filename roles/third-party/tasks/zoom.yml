@@ -8,11 +8,20 @@
     snap_names: [zoom-client]
   tags: [third_party, zoom]
 
+- name: Check if Zoom is already installed
+  ansible.builtin.command:
+    cmd: dpkg-query -W -f='${Status}' zoom
+  register: zoom_installed
+  failed_when: false
+  changed_when: false
+  tags: [third_party, zoom]
+
 - name: Download Zoom deb
   ansible.builtin.get_url:
     url: https://zoom.us/client/latest/zoom_amd64.deb
     dest: /tmp/zoom_amd64.deb
     mode: "0644"
+  when: "'install ok installed' not in zoom_installed.stdout"
   tags: [third_party, zoom]
 
 - name: Install Zoom deb
@@ -20,4 +29,5 @@
     deb: /tmp/zoom_amd64.deb
     state: present
   become: true
+  when: "'install ok installed' not in zoom_installed.stdout"
   tags: [third_party, zoom]
