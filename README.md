@@ -66,7 +66,7 @@ All toggles live in `vars/vars.yml`. The most useful ones:
 | `install_ansible` | `false` | Ansible (apt) for running playbooks locally |
 | `install_claude` | `true` | Claude Code CLI (official installer to `~/.local/bin`) |
 | `install_kubectl` | `true` | kubectl from the official Kubernetes apt repo (`pkgs.k8s.io`) |
-| `install_multipass` | `false` | Multipass via snap (snap is the only Linux distribution channel) |
+| `install_multipass` | `true` | Multipass via snap (snap is the only Linux distribution channel) |
 | `install_fish` | `true` | Fish shell + Pure prompt + Fisher |
 | `install_bash` | `false` | Bash dotfiles |
 | `install_nerd_font` | `true` | FiraCode Nerd Font for prompts/icons |

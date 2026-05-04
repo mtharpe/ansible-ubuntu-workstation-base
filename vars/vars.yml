@@ -32,7 +32,7 @@ install_nerd_font: true
 install_eza: true
 install_claude: true
 install_kubectl: true
-install_multipass: false
+install_multipass: true
 
 # python3
 ansible_python_interpreter: /usr/bin/python3
