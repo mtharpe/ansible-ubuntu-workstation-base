@@ -223,6 +223,15 @@
   ansible.builtin.apt:
     name:
       - firefox
+      - thunderbird
+      - libreoffice-core
+      - libreoffice-common
+      - libreoffice-writer
+      - libreoffice-calc
+      - libreoffice-impress
+      - libreoffice-draw
+      - libreoffice-base-core
+      - libreoffice-math
       - gnome-calendar
       - gnome-contacts
       - gnome-maps
@@ -231,5 +240,7 @@
       - gnome-tour
       - gnome-logs
     state: absent
+    purge: true
+    autoremove: true
   become: true
   failed_when: false

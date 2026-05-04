@@ -34,6 +34,14 @@ install_claude: true
 install_kubectl: true
 install_multipass: true
 
+# GNOME Shell extensions to install + enable. UUIDs must match
+# extensions.gnome.org. Edit if any UUID needs to change.
+gnome_extensions:
+  - just-perfection-desktop@just-perfection
+  - auto-move-windows@gnome-shell-extensions.gcampax.github.com
+  - power-profile-switcher@fthx
+  - auto-select-headset@krocg
+
 # python3
 ansible_python_interpreter: /usr/bin/python3
 
