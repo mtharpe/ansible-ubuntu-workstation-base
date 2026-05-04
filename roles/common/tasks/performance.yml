@@ -1,7 +1,9 @@
 ---
 # Workstation performance tuning. Idempotent and skipped in containers.
-# Sysctl values target an interactive desktop with plenty of RAM:
-# - swappiness=10: keep things in RAM unless memory pressure is real
+# Sysctl values target a Chrome-heavy desktop where zram is the swap
+# target (so paging is cheap):
+# - swappiness=180: lean into zram early instead of pushing back on apps
+# - page-cluster=0: read pages one at a time (optimal for zstd-compressed zram)
 # - vfs_cache_pressure=50: keep inode/dentry cache longer (faster file ops)
 # - dirty_ratio=10 / dirty_background_ratio=5: flush sooner so big writes
 #   don't stall interactive apps
@@ -15,7 +17,8 @@
     reload: true
   become: true
   loop:
-    - { name: vm.swappiness, value: '10' }
+    - { name: vm.swappiness, value: '180' }
+    - { name: vm.page-cluster, value: '0' }
     - { name: vm.vfs_cache_pressure, value: '50' }
     - { name: vm.dirty_ratio, value: '10' }
     - { name: vm.dirty_background_ratio, value: '5' }
@@ -26,6 +29,49 @@
   ansible.builtin.systemd:
     name: fstrim.timer
     enabled: true
+    state: started
+  become: true
+  when: not is_container | default(false)
+  failed_when: false
+
+# zram: compressed RAM-backed swap. With zstd, ~3x compression effective,
+# so 8 GiB zram on a 16 GiB box gives ~5 GiB extra usable anon memory
+# under pressure at the cost of CPU. Sized at half RAM, capped at 16 GiB.
+- name: Install systemd-zram-generator
+  ansible.builtin.apt:
+    name: systemd-zram-generator
+    state: present
+  become: true
+  when: not is_container | default(false)
+
+- name: Configure zram-generator
+  ansible.builtin.copy:
+    dest: /etc/systemd/zram-generator.conf
+    owner: root
+    group: root
+    mode: '0644'
+    content: |
+      # ansible-managed
+      [zram0]
+      zram-size = min(ram / 2, 16384)
+      compression-algorithm = zstd
+      swap-priority = 100
+      fs-type = swap
+  become: true
+  register: zram_conf
+  when: not is_container | default(false)
+
+- name: Reload systemd to register zram units
+  ansible.builtin.systemd:
+    daemon_reload: true
+  become: true
+  when:
+    - not is_container | default(false)
+    - zram_conf is changed
+
+- name: Activate zram swap now
+  ansible.builtin.systemd:
+    name: dev-zram0.swap
     state: started
   become: true
   when: not is_container | default(false)
