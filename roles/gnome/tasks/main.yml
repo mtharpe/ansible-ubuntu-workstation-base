@@ -74,6 +74,24 @@
     - k: /org/gnome/desktop/peripherals/touchpad/natural-scroll
       v: "false"
 
+    - k: /org/gnome/desktop/peripherals/touchpad/tap-to-click
+      v: "true"
+
+    - k: /org/gnome/desktop/peripherals/touchpad/click-method
+      v: "'fingers'"
+
+    - k: /org/gnome/desktop/wm/keybindings/switch-applications
+      v: "['<Alt>Tab']"
+
+    - k: /org/gnome/desktop/wm/keybindings/switch-applications-backward
+      v: "['<Shift><Alt>Tab']"
+
+    - k: /org/gnome/desktop/wm/keybindings/switch-windows
+      v: "@as []"
+
+    - k: /org/gnome/desktop/wm/keybindings/switch-windows-backward
+      v: "@as []"
+
     - k: /org/gnome/peripherals/mouse/natural-scroll
       v: "false"
 
