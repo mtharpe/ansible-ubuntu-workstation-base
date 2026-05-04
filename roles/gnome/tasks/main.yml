@@ -75,7 +75,7 @@
       v: "false"
 
     - k: /org/gnome/desktop/peripherals/touchpad/tap-to-click
-      v: "true"
+      v: "false"
 
     - k: /org/gnome/desktop/peripherals/touchpad/click-method
       v: "'fingers'"
