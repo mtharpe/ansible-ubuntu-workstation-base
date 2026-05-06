@@ -1,4 +1,8 @@
 ---
+# Install Lutris from the upstream GitHub release (the Lutris team's official
+# .deb). Preferred over the PPA because the PPA lags on new Ubuntu releases,
+# and snap/flatpak sandbox Wine in ways that break game installs.
+
 - name: Remove conflicting Lutris snap
   ansible.builtin.include_tasks:
     file: remove-snap.yml
@@ -8,98 +12,66 @@
     snap_names: [lutris]
   tags: [third_party, lutris]
 
-- name: Check for Wine
-  ansible.builtin.stat:
-    path: /usr/bin/wine
-  register: wine_installed
-  tags: [third_party, lutris]
-
-- name: Check for Lutris
-  ansible.builtin.stat:
-    path: /usr/bin/lutris
-  register: lutris_installed
-  tags: [third_party, lutris]
-
-# Lutris PPA only publishes builds for currently-supported Ubuntu releases.
-# Probe the Launchpad pocket so a brand-new (or EOL) Ubuntu skips cleanly.
-- name: Probe Lutris PPA for current Ubuntu release
+- name: Fetch latest Lutris release metadata
   ansible.builtin.uri:
-    url: "https://ppa.launchpadcontent.net/lutris-team/lutris/ubuntu/dists/{{ ansible_facts['distribution_release'] }}/Release"
-    method: HEAD
-    status_code: [200, 301, 302]
-  register: lutris_probe
-  failed_when: false
-  changed_when: false
-  when: not lutris_installed.stat.exists
+    url: https://api.github.com/repos/lutris/lutris/releases/latest
+    return_content: true
+  register: lutris_release
   tags: [third_party, lutris]
 
-- name: Note unsupported Lutris release
-  ansible.builtin.debug:
-    msg: "Lutris PPA has no pocket for '{{ ansible_facts['distribution_release'] }}' — skipping Lutris install."
-  when:
-    - not lutris_installed.stat.exists
-    - lutris_probe.status | default(0) != 200
-  tags: [third_party, lutris]
-
-- name: Set Lutris-supported flag
+- name: Resolve latest Lutris .deb URL and version
   ansible.builtin.set_fact:
-    lutris_supported: "{{ lutris_installed.stat.exists or (lutris_probe.status | default(0) == 200) }}"
+    lutris_latest_version: "{{ lutris_release.json.tag_name | regex_replace('^v', '') }}"
+    lutris_deb_url: >-
+      {{ (lutris_release.json.assets
+          | selectattr('name', 'match', '^lutris_.*\.deb$')
+          | list | first).browser_download_url }}
   tags: [third_party, lutris]
 
-- name: Add Lutris PPA
-  ansible.builtin.apt_repository:
-    repo: ppa:lutris-team/lutris
+- name: Check installed Lutris version
+  ansible.builtin.command: dpkg-query -W -f=${Version} lutris
+  register: lutris_installed_version
+  changed_when: false
+  failed_when: false
+  tags: [third_party, lutris]
+
+- name: Download Lutris .deb
+  ansible.builtin.get_url:
+    url: "{{ lutris_deb_url }}"
+    dest: "/tmp/lutris-{{ lutris_latest_version }}.deb"
+    mode: '0644'
+  register: lutris_deb_download
+  when: lutris_installed_version.stdout != lutris_latest_version
+  tags: [third_party, lutris]
+
+- name: Install Lutris .deb
+  ansible.builtin.apt:
+    deb: "{{ lutris_deb_download.dest }}"
     state: present
-    update_cache: false
   become: true
   when:
-    - not lutris_installed.stat.exists
-    - lutris_supported
-  register: lutris_repo_added
-  tags: [third_party, lutris]
-
-- name: Refresh apt cache after adding Lutris PPA  # noqa: no-handler
-  ansible.builtin.apt:
-    update_cache: true
-  become: true
-  when: lutris_repo_added is changed
-  changed_when: false
+    - lutris_installed_version.stdout != lutris_latest_version
+    - lutris_deb_download is succeeded
   tags: [third_party, lutris]
 
 - name: Install Wine
   ansible.builtin.apt:
     name: wine
     state: present
-  when:
-    - not wine_installed.stat.exists
-    - lutris_supported
   become: true
   tags: [third_party, lutris]
 
-- name: Install Lutris
-  ansible.builtin.apt:
-    name: lutris
-    state: present
-  when:
-    - not lutris_installed.stat.exists
-    - lutris_supported
-  become: true
-  tags: [third_party, lutris]
-
-- name: Install Vulkan Loader
+- name: Install Vulkan loader
   ansible.builtin.apt:
     name:
       - libvulkan1
       - mesa-vulkan-drivers
       - vulkan-tools
     state: present
-  when:
-    - not lutris_installed.stat.exists
-    - lutris_supported
   become: true
   tags: [third_party, lutris]
 
-- name: Install missing 32-bit libraries for Lutris
+- name: Install supporting libraries for Lutris
   ansible.builtin.apt:
     name:
       - libfreetype6
@@ -107,9 +79,6 @@
       - libldap-2.5-0
       - libgpg-error0
     state: present
-  when:
-    - not lutris_installed.stat.exists
-    - lutris_supported
   become: true
   failed_when: false
   tags: [third_party, lutris]
