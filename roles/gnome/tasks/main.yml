@@ -39,6 +39,7 @@
   become: true
   become_user: "{{ local_user }}"
   when: not is_container | default(false)
+  tags: [gnome]
   loop:
     - k: /org/gnome/desktop/interface/clock-format
       v: "'12h'"
@@ -149,6 +150,7 @@
   when: not is_container | default(false)
   changed_when: false
   failed_when: false
+  tags: [gnome]
   loop:
     - ubuntu-dock@ubuntu.com
     - ding@rastersoft.com
@@ -156,3 +158,4 @@
 - name: Install and enable GNOME Shell extensions
   ansible.builtin.import_tasks: extensions.yml
   when: not is_container | default(false)
+  tags: [gnome, extensions]
