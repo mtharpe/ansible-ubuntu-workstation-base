@@ -1,4 +1,36 @@
 ---
+# Ubuntu ships its own Ubuntu Sans / Ubuntu Mono branding in fonts-ubuntu and
+# wires those into dconf. Install the long-standing upstream GNOME defaults
+# (Cantarell + DejaVu Sans Mono) so the playbook is reproducible across fresh
+# installs, then reassert them in dconf below.
+- name: Install GNOME default fonts (Cantarell + DejaVu Sans Mono)
+  ansible.builtin.apt:
+    name:
+      - fonts-cantarell
+      - fonts-dejavu-core
+    state: present
+  become: true
+  tags: [gnome, fonts]
+
+- name: Override Ubuntu's font branding with GNOME defaults
+  community.general.dconf:
+    key: "{{ item.k }}"
+    value: "{{ item.v }}"
+    state: present
+  become: true
+  become_user: "{{ local_user }}"
+  when: not is_container | default(false)
+  loop:
+    - k: /org/gnome/desktop/interface/font-name
+      v: "'Cantarell 11'"
+    - k: /org/gnome/desktop/interface/document-font-name
+      v: "'Cantarell 11'"
+    - k: /org/gnome/desktop/interface/monospace-font-name
+      v: "'DejaVu Sans Mono 11'"
+    - k: /org/gnome/desktop/wm/preferences/titlebar-font
+      v: "'Cantarell Bold 11'"
+  tags: [gnome, fonts]
+
 - name: Setup Gnome
   community.general.dconf:
     key: "{{ item.k }}"
