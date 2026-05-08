@@ -50,7 +50,7 @@
     dest: "/tmp/lutris-{{ lutris_latest_version }}.deb"
     mode: '0644'
   register: lutris_deb_download
-  when: lutris_installed_version.stdout != lutris_latest_version
+  when: lutris_installed_version.stdout == "" or lutris_installed_version.stdout is version(lutris_latest_version, '<')
   tags: [third_party, lutris]
 
 - name: Install Lutris .deb
@@ -59,7 +59,7 @@
     state: present
   become: true
   when:
-    - lutris_installed_version.stdout != lutris_latest_version
+    - lutris_installed_version.stdout == "" or lutris_installed_version.stdout is version(lutris_latest_version, '<')
     - lutris_deb_download is succeeded
   tags: [third_party, lutris]
 
