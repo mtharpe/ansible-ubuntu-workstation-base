@@ -103,3 +103,17 @@ alias jctl="journalctl -p 3 -xb"
 
 # Recent installed packages
 alias rip="expac --timefmt='%Y-%m-%d %T' '%l\t%n %v' | sort | tail -200 | nl"
+
+# --- Configure Pure Prompt ---
+if status is-interactive
+  if functions -q fisher
+    source (fisher path)/pure.fish
+    set -g pure_show_system_time true
+    set --universal pure_show_numbered_git_indicator true
+    set --universal pure_symbol_git_dirty '*'
+    set --universal pure_symbol_git_stash '≡'
+    set --universal pure_symbol_git_unpulled_commits '⇣'
+    set --universal pure_symbol_git_unpushed_commits '⇡'
+  end
+end
+# ---------------------------
