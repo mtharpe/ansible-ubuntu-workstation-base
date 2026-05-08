@@ -1,4 +1,11 @@
 ---
+# This file is the tracked sane defaults for the playbook.
+#
+# On a fresh checkout: `cp vars/vars.example.yml vars/vars.yml` and edit
+# vars/vars.yml for your personal toggles — it's gitignored.
+#
+# Edit THIS file (vars.example.yml) only when you want to change the defaults
+# that ship in the repo, not for one-off local preferences.
 
 # User
 local_user: tharpem
