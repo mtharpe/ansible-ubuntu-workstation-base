@@ -1,0 +1,24 @@
+---
+# Reusable helper: enable the i386 (multilib) dpkg architecture so :i386
+# packages can be installed. Steam, Wine, and Battle.net all ship 32-bit
+# components on Ubuntu 24.04 and silently fail to install without this.
+#
+# Idempotent: if i386 is already a foreign architecture, both the dpkg
+# add and the apt cache refresh are skipped.
+- name: Check enabled dpkg foreign architectures
+  ansible.builtin.command: dpkg --print-foreign-architectures
+  register: multilib_foreign_arches
+  changed_when: false
+
+- name: Enable i386 multilib architecture
+  ansible.builtin.command: dpkg --add-architecture i386
+  become: true
+  when: "'i386' not in multilib_foreign_arches.stdout_lines"
+  changed_when: true
+
+- name: Refresh apt cache after enabling i386
+  ansible.builtin.apt:
+    update_cache: true
+  become: true
+  when: "'i386' not in multilib_foreign_arches.stdout_lines"
+  changed_when: false

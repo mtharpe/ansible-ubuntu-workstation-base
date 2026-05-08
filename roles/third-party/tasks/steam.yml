@@ -8,6 +8,15 @@
     snap_names: [steam]
   tags: [third_party, steam]
 
+# steam-installer pulls in 32-bit runtime libs; multilib must be enabled
+# before apt will resolve them.
+- name: Enable i386 multilib for Steam runtime
+  ansible.builtin.include_tasks:
+    file: enable-multilib.yml
+    apply:
+      tags: [third_party, steam]
+  tags: [third_party, steam]
+
 - name: Enable multiverse repository for Steam
   ansible.builtin.apt_repository:
     repo: "deb http://archive.ubuntu.com/ubuntu {{ ansible_facts['distribution_release'] }} multiverse"
@@ -25,9 +34,14 @@
   changed_when: false
   tags: [third_party, steam]
 
-- name: Install Steam
+# steam-installer is the canonical multiverse package on Ubuntu 24.04 — it
+# pulls in the i386 runtime and the official Steam bootstrapper. mangohud is
+# the FPS/VRAM/CPU overlay used by both Steam and Lutris (toggled per-game).
+- name: Install Steam and MangoHud overlay
   ansible.builtin.apt:
-    name: steam
+    name:
+      - steam-installer
+      - mangohud
     state: present
   become: true
   failed_when: false
