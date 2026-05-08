@@ -3,3 +3,7 @@
 .vscode
 .vagrant
 .ansible/
+
+# Per-user feature toggles. Track vars.example.yml as the sane defaults;
+# vars/vars.yml is the user's local copy and stays out of git.
+vars/vars.yml
