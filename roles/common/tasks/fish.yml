@@ -98,27 +98,58 @@
   become: true
   when: install_starship | default(false)
 
-# `alias --save foo='bar'` writes ~/.config/fish/functions/foo.fish, so the
-# first saved alias's function file is a reliable existence marker. Run via
-# the `script` module so the file is shipped, executed, and cleaned up in a
-# single idempotent step instead of the old copy/run/delete trio.
-- name: Apply fish aliases (alias --save)
-  ansible.builtin.script:
-    cmd: templates/fish_aliases.sh
-    executable: /usr/bin/fish
-    creates: "/home/{{ local_user }}/.config/fish/functions/ls.fish"
+- name: Copy fish aliases script
+  ansible.builtin.copy:
+    src: templates/fish_aliases.sh
+    dest: /home/{{ local_user }}/fish_aliases.sh
+    owner: "{{ local_user }}"
+    group: "{{ local_user }}"
+    mode: "0755"
+  become: true
+
+- name: Execute fish aliases script
+  ansible.builtin.shell: /home/{{ local_user }}/fish_aliases.sh
   become: true
   become_user: "{{ local_user }}"
+  args:
+    executable: /usr/bin/fish
 
-# git.io/fisher just sources Fisher into the current shell — fisher.fish is
-# never persisted. Use one of the Pure function files (which Fisher *does*
-# install to disk) as the existence marker.
+- name: Remove fish aliases script
+  ansible.builtin.file:
+    path: /home/{{ local_user }}/fish_aliases.sh
+    state: absent
+  become: true
+
 - name: Install Fisher (Fish plugin manager)  # noqa: command-instead-of-module
   ansible.builtin.shell:
     cmd: >-
       curl -sL https://git.io/fisher | source &&
       fisher install pure-fish/pure
     executable: /bin/fish
-    creates: "/home/{{ local_user }}/.config/fish/functions/_pure_check_availability.fish"
+    creates: "/home/{{ local_user }}/.config/fish/functions/fisher.fish"
+  become: true
+  become_user: "{{ local_user }}"
+
+- name: Configure Fish to use Pure Prompt
+  ansible.builtin.blockinfile:
+    path: "/home/{{ local_user }}/.config/fish/config.fish"
+    create: true
+    owner: "{{ local_user }}"
+    group: "{{ local_user }}"
+    mode: '0644'
+    block: |
+        # --- Configure Pure Prompt ---
+        if status is-interactive
+          if functions -q fisher
+            source (fisher path)/pure.fish
+            set -g pure_show_system_time true
+            set --universal pure_show_numbered_git_indicator true
+            set --universal pure_symbol_git_dirty '*'
+            set --universal pure_symbol_git_stash '≡'
+            set --universal pure_symbol_git_unpulled_commits '⇣'
+            set --universal pure_symbol_git_unpushed_commits '⇡'
+          end
+        end
+        # ---------------------------
   become: true
   become_user: "{{ local_user }}"
