@@ -23,6 +23,7 @@
   args:
     executable: /bin/bash
   when: slack_installed.rc != 0
+  changed_when: false
   tags: [third_party, slack]
 
 - name: Verify downloaded file is a Debian package
