@@ -39,7 +39,10 @@
       - python3-pip
       - python3-termcolor
       - unzip
-      - alacritty
+      # alacritty intentionally NOT here: Ubuntu 24.04 ships 0.13.2, but our
+      # alacritty.toml uses the [terminal] / [general] sections introduced in
+      # 0.14. We install alacritty from ppa:aslatter/ppa in the third-party
+      # alacritty role instead.
       - vlc
       - util-linux
       - nextcloud-desktop

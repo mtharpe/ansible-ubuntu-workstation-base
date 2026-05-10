@@ -8,6 +8,37 @@
     snap_names: [alacritty]
   tags: [third_party, alacritty]
 
+# Ubuntu 24.04's apt-shipped alacritty is 0.13.2, which doesn't recognize the
+# [terminal] / [general] sections introduced in 0.14 — produces "Unused config
+# key: shell" / "Unused config key: general" warnings. The aslatter PPA tracks
+# upstream alacritty releases for current LTS (0.14+ at time of writing), so
+# the same alacritty.toml works on Ubuntu, Fedora, and Manjaro.
+- name: Install PPA prerequisites
+  ansible.builtin.apt:
+    name:
+      - software-properties-common
+      - python3-debian
+    state: present
+    cache_valid_time: 3600
+  become: true
+  tags: [third_party, alacritty]
+
+- name: Add Aslatter Alacritty PPA (Ubuntu only)
+  ansible.builtin.apt_repository:
+    repo: ppa:aslatter/ppa
+    state: present
+    update_cache: true
+  become: true
+  tags: [third_party, alacritty]
+
+- name: Install alacritty (from PPA)
+  ansible.builtin.apt:
+    name: alacritty
+    state: present
+    cache_valid_time: 3600
+  become: true
+  tags: [third_party, alacritty]
+
 - name: Create a directory if it does not exist
   ansible.builtin.file:
     path: /home/{{ local_user }}/.config/alacritty
