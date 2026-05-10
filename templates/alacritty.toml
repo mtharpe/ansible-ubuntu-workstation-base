@@ -52,12 +52,17 @@ style = "Italic"
 family = "FiraCode Nerd Font"
 style = "Regular"
 
+[general]
+live_config_reload = true
+
 [selection]
 save_to_clipboard = true
 
-[terminal.shell]
-args = ["-l", "-c", "tmux attach || tmux"]
-program = "/bin/bash"
+# Alacritty 0.13+ requires `shell` as an inline value under [terminal];
+# the previous `[terminal.shell]` sub-table form combined with a separate
+# empty `[terminal]` block produced "Unused config key: shell" warnings.
+[terminal]
+shell = { program = "/bin/bash", args = ["-l", "-c", "tmux attach || tmux"] }
 
 [window]
 decorations = "full"
@@ -65,8 +70,3 @@ dynamic_padding = true
 dynamic_title = false
 startup_mode = "Maximized"
 title = "Terminal"
-
-[general]
-live_config_reload = true
-
-[terminal]

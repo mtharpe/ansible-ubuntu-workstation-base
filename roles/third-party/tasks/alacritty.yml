@@ -33,6 +33,36 @@
     mode: "0755"
   become: true
 
+# Probe the system for which terminal icon is actually installed and pick the
+# first one that exists (priority: newest GNOME terminal first, falling back
+# to alacritty's own icon, then the freedesktop generic). Avoids per-distro
+# hardcoding — Ubuntu 24.04 ships gnome-terminal, Fedora 41+ ships Ptyxis,
+# etc. — and survives icon-name churn between releases.
+- name: Probe for an installed terminal icon
+  ansible.builtin.shell: |
+    set -o pipefail
+    matches="$(find /usr/share/icons /usr/share/pixmaps -maxdepth 6 \
+        \( -name 'org.gnome.Ptyxis.*' -o -name 'org.gnome.Console.*' \
+           -o -name 'org.gnome.Terminal.*' -o -name 'Alacritty.*' \
+           -o -name 'utilities-terminal.*' \) \
+        -printf '%f\n' 2>/dev/null | sort -u)"
+    for name in org.gnome.Ptyxis org.gnome.Console org.gnome.Terminal Alacritty utilities-terminal; do
+      if echo "${matches}" | grep -q "^${name}\."; then
+        echo "${name}"
+        break
+      fi
+    done
+  args:
+    executable: /bin/bash
+  register: alacritty_icon_probe
+  changed_when: false
+  tags: [third_party, alacritty]
+
+- name: Set fact alacritty_terminal_icon
+  ansible.builtin.set_fact:
+    alacritty_terminal_icon: "{{ (alacritty_icon_probe.stdout | trim) or 'utilities-terminal' }}"
+  tags: [third_party, alacritty]
+
 - name: Template alacritty.desktop
   ansible.builtin.template:
     src: templates/gnome_desktop/alacritty.desktop
