@@ -34,7 +34,11 @@
 - name: Install alacritty (from PPA)
   ansible.builtin.apt:
     name: alacritty
-    state: present
+    # `state: latest` (not `present`) so an already-installed apt-shipped
+    # 0.13.2 gets upgraded to the PPA's 0.14+ release. With `present`, apt
+    # treats the existing version as satisfying the requirement and never
+    # consults the PPA's higher candidate.
+    state: latest
     cache_valid_time: 3600
   become: true
   tags: [third_party, alacritty]
