@@ -56,9 +56,9 @@
         comment: "{{ item.comment }}"
       loop:
         - { port: "5353", proto: "udp", comment: "mDNS (avahi / printer discovery)" }
-        - { port: "631",  proto: "tcp", comment: "IPP (CUPS)" }
-        - { port: "631",  proto: "udp", comment: "IPP discovery" }
-        - { port: "546",  proto: "udp", comment: "DHCPv6 client" }
+        - { port: "631", proto: "tcp", comment: "IPP (CUPS)" }
+        - { port: "631", proto: "udp", comment: "IPP discovery" }
+        - { port: "546", proto: "udp", comment: "DHCPv6 client" }
       become: true
 
     - name: Ensure configured ports are allowed
