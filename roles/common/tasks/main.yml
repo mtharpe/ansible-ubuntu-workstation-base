@@ -12,6 +12,9 @@
   ansible.builtin.import_tasks: users.yml
 - name: Setup Services
   ansible.builtin.import_tasks: services.yml
+- name: Setup Printers
+  ansible.builtin.import_tasks: printers.yml
+  when: install_printers | default(true)
 - name: Setup System
   ansible.builtin.import_tasks: system.yml
 - name: Apply Performance Tuning

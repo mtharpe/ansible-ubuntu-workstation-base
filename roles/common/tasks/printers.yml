@@ -1,0 +1,41 @@
+---
+# Bring up a full CUPS print stack: server + BSD/SysV client tools, the
+# kitchen-sink driver bundle (foomatic, gutenprint, escpr, brlaser, hpijs,
+# etc.), HPLIP for HP USB devices, and system-config-printer for the GTK
+# admin UI. cups-browsed picks up mDNS/IPP-Everywhere printers on the LAN
+# automatically; ipp-usb (pulled in transitively) handles driverless USB.
+- name: Install CUPS and print drivers
+  ansible.builtin.apt:
+    name:
+      - cups
+      - cups-client
+      - cups-bsd
+      - cups-browsed
+      - printer-driver-all
+      - system-config-printer
+      - hplip
+      - ipp-usb
+    state: present
+    cache_valid_time: 3600
+  become: true
+  tags: [common, printers]
+
+- name: Add {{ local_user }} to lpadmin (manage printers without sudo)
+  ansible.builtin.user:
+    name: "{{ local_user }}"
+    groups: [lpadmin]
+    append: true
+  become: true
+  tags: [common, printers]
+
+- name: Enable and start CUPS services
+  ansible.builtin.service:
+    name: "{{ item }}"
+    state: started
+    enabled: true
+  loop:
+    - cups
+    - cups-browsed
+  become: true
+  when: not is_container | default(false)
+  tags: [common, printers]
