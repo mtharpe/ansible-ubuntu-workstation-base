@@ -1,0 +1,93 @@
+---
+# GNOME's color-scheme + gtk-theme dconf keys only reach GTK3/4 libadwaita
+# apps that actually consult them. Legacy toolkits miss out:
+#   - GTK2 apps read ~/.gtkrc-2.0 and ignore dconf entirely (and Adwaita-dark
+#     for GTK2 only exists if gnome-themes-extra is installed)
+#   - Qt apps default to Fusion-light unless QT_QPA_PLATFORMTHEME points at
+#     a Qt integration plugin (qgnomeplatform reads the same gsettings the
+#     GNOME apps do, so dark mode propagates)
+#   - GTK3 apps launched outside a logged-in GNOME session (e.g. from a
+#     terminal over SSH or via systemd-run) don't see the dconf values and
+#     need ~/.config/gtk-3.0/settings.ini as a fallback
+- name: Install legacy-toolkit dark-mode integration packages
+  ansible.builtin.apt:
+    name:
+      - gnome-themes-extra
+      - qgnomeplatform-qt5
+      - qgnomeplatform-qt6
+      - adwaita-qt
+      - adwaita-qt6
+    state: present
+    cache_valid_time: 3600
+  become: true
+  tags: [gnome, dark-mode]
+
+- name: Ensure GTK config directories exist
+  ansible.builtin.file:
+    path: "/home/{{ local_user }}/{{ item }}"
+    state: directory
+    owner: "{{ local_user }}"
+    group: "{{ local_user }}"
+    mode: "0755"
+  become: true
+  loop:
+    - .config/gtk-3.0
+    - .config/gtk-4.0
+  tags: [gnome, dark-mode]
+
+- name: Configure GTK2 dark theme (~/.gtkrc-2.0)
+  ansible.builtin.copy:
+    dest: "/home/{{ local_user }}/.gtkrc-2.0"
+    owner: "{{ local_user }}"
+    group: "{{ local_user }}"
+    mode: "0644"
+    content: |
+      # {{ ansible_managed }}
+      gtk-theme-name = "Adwaita-dark"
+      gtk-icon-theme-name = "Adwaita"
+      gtk-cursor-theme-name = "Adwaita"
+  become: true
+  tags: [gnome, dark-mode]
+
+- name: Configure GTK3 dark theme (~/.config/gtk-3.0/settings.ini)
+  ansible.builtin.copy:
+    dest: "/home/{{ local_user }}/.config/gtk-3.0/settings.ini"
+    owner: "{{ local_user }}"
+    group: "{{ local_user }}"
+    mode: "0644"
+    content: |
+      # {{ ansible_managed }}
+      [Settings]
+      gtk-application-prefer-dark-theme = 1
+      gtk-theme-name = Adwaita-dark
+      gtk-icon-theme-name = Adwaita
+      gtk-cursor-theme-name = Adwaita
+  become: true
+  tags: [gnome, dark-mode]
+
+- name: Configure GTK4 dark theme preference (~/.config/gtk-4.0/settings.ini)
+  ansible.builtin.copy:
+    dest: "/home/{{ local_user }}/.config/gtk-4.0/settings.ini"
+    owner: "{{ local_user }}"
+    group: "{{ local_user }}"
+    mode: "0644"
+    content: |
+      # {{ ansible_managed }}
+      [Settings]
+      gtk-application-prefer-dark-theme = 1
+  become: true
+  tags: [gnome, dark-mode]
+
+# /etc/environment is read by PAM at login, so this needs a session restart
+# to take effect. Routes Qt5/Qt6 apps through qgnomeplatform, which reads
+# org.gnome.desktop.interface.color-scheme — so flipping GNOME between light
+# and dark also flips Qt apps without a separate config.
+- name: Route Qt apps through the GNOME platform theme
+  ansible.builtin.lineinfile:
+    path: /etc/environment
+    regexp: "^QT_QPA_PLATFORMTHEME="
+    line: "QT_QPA_PLATFORMTHEME=gnome"
+    state: present
+    create: false
+  become: true
+  tags: [gnome, dark-mode]

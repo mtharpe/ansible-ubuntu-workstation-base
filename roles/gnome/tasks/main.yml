@@ -155,6 +155,11 @@
     - ubuntu-dock@ubuntu.com
     - ding@rastersoft.com
 
+- name: Propagate dark mode to legacy toolkits (GTK2, Qt, GTK3 outside session)
+  ansible.builtin.import_tasks: dark-mode.yml
+  when: not is_container | default(false)
+  tags: [gnome, dark-mode]
+
 - name: Install and enable GNOME Shell extensions
   ansible.builtin.import_tasks: extensions.yml
   when: not is_container | default(false)
