@@ -9,12 +9,16 @@
 #   - GTK3 apps launched outside a logged-in GNOME session (e.g. from a
 #     terminal over SSH or via systemd-run) don't see the dconf values and
 #     need ~/.config/gtk-3.0/settings.ini as a fallback
+# qgnomeplatform-qt6 isn't packaged on Ubuntu 24.04 (noble), so Qt6 apps
+# can't go through the gsettings-aware platform theme route. Fall back to
+# QT_STYLE_OVERRIDE below to force them onto adwaita-qt6's Adwaita-Dark
+# style. Drop QT_STYLE_OVERRIDE and add qgnomeplatform-qt6 here once a
+# future Ubuntu release packages it.
 - name: Install legacy-toolkit dark-mode integration packages
   ansible.builtin.apt:
     name:
       - gnome-themes-extra
       - qgnomeplatform-qt5
-      - qgnomeplatform-qt6
       - adwaita-qt
       - adwaita-qt6
     state: present
@@ -78,16 +82,24 @@
   become: true
   tags: [gnome, dark-mode]
 
-# /etc/environment is read by PAM at login, so this needs a session restart
-# to take effect. Routes Qt5/Qt6 apps through qgnomeplatform, which reads
-# org.gnome.desktop.interface.color-scheme — so flipping GNOME between light
-# and dark also flips Qt apps without a separate config.
+# /etc/environment is read by PAM at login, so these need a session restart
+# to take effect.
+#   QT_QPA_PLATFORMTHEME=gnome   — Qt5 apps route through qgnomeplatform-qt5,
+#                                  which reads org.gnome.desktop.interface
+#                                  (so a single color-scheme flip moves them).
+#   QT_STYLE_OVERRIDE=Adwaita-Dark — Qt6 fallback: with no qgnomeplatform-qt6
+#                                    on noble, we force the adwaita-qt6 style
+#                                    directly. Drop once qgnomeplatform-qt6
+#                                    ships in a future Ubuntu release.
 - name: Route Qt apps through the GNOME platform theme
   ansible.builtin.lineinfile:
     path: /etc/environment
-    regexp: "^QT_QPA_PLATFORMTHEME="
-    line: "QT_QPA_PLATFORMTHEME=gnome"
+    regexp: "^{{ item.key }}="
+    line: "{{ item.key }}={{ item.value }}"
     state: present
     create: false
+  loop:
+    - { key: "QT_QPA_PLATFORMTHEME", value: "gnome" }
+    - { key: "QT_STYLE_OVERRIDE",    value: "Adwaita-Dark" }
   become: true
   tags: [gnome, dark-mode]
