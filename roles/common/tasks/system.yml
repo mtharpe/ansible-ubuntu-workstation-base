@@ -24,6 +24,10 @@
 
 # UFW: install and configure a sensible desktop firewall
 # Skipped in containers — ufw requires netfilter access not available in unprivileged containers.
+#
+# Allow rules MUST be added before `state: enabled`. Enabling sets default-deny
+# on incoming, which would drop new SSH connections — including the one this
+# play is running over, if invoked remotely.
 - name: Configure ufw
   when: not is_container | default(false)
   block:
@@ -33,26 +37,42 @@
         state: present
       become: true
 
-    - name: Ensure ufw is enabled and running
-      community.general.ufw:
-        state: enabled
-      become: true
-
-    - name: Ensure common desktop services are allowed
+    - name: Allow SSH (OpenSSH app profile)
       community.general.ufw:
         rule: allow
-        name: "{{ item }}"
-      loop: "{{ firewalld_allowed_services | default(['ssh', 'mdns', 'dhcpv6-client']) }}"
+        name: OpenSSH
       become: true
-      failed_when: false
+
+    # mDNS for avahi (printer/service discovery), IPP for CUPS, DHCPv6 client.
+    # Explicit port rules — the older `name: mdns` / `name: dhcpv6-client`
+    # approach silently failed because those aren't standard UFW app profiles
+    # nor /etc/services entries, which is how SSH ended up blocked on a fresh
+    # machine.
+    - name: Allow desktop service ports
+      community.general.ufw:
+        rule: allow
+        port: "{{ item.port }}"
+        proto: "{{ item.proto }}"
+        comment: "{{ item.comment }}"
+      loop:
+        - { port: "5353", proto: "udp", comment: "mDNS (avahi / printer discovery)" }
+        - { port: "631",  proto: "tcp", comment: "IPP (CUPS)" }
+        - { port: "631",  proto: "udp", comment: "IPP discovery" }
+        - { port: "546",  proto: "udp", comment: "DHCPv6 client" }
+      become: true
 
     - name: Ensure configured ports are allowed
       community.general.ufw:
         rule: allow
         port: "{{ item }}"
         proto: tcp
-      loop: "{{ firewalld_allowed_ports | default([]) }}"
-      when: firewalld_allowed_ports is defined and firewalld_allowed_ports | length > 0
+      loop: "{{ ufw_allowed_ports | default([]) }}"
+      when: ufw_allowed_ports is defined and ufw_allowed_ports | length > 0
+      become: true
+
+    - name: Ensure ufw is enabled and running
+      community.general.ufw:
+        state: enabled
       become: true
 
 # Configure git user settings
