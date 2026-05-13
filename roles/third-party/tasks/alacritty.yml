@@ -98,13 +98,22 @@
     alacritty_terminal_icon: "{{ (alacritty_icon_probe.stdout | trim) or 'utilities-terminal' }}"
   tags: [third_party, alacritty]
 
-- name: Template alacritty.desktop
+# Filename must match the system .desktop ID (com.alacritty.Alacritty.desktop)
+# so this user-level file overrides the upstream one. Using any other name
+# leaves two entries matching StartupWMClass=Alacritty and the dock shows a
+# duplicate icon when Alacritty launches.
+- name: Template Alacritty .desktop override
   ansible.builtin.template:
-    src: templates/gnome_desktop/alacritty.desktop
-    dest: /home/{{ local_user }}/.local/share/applications/alacritty.desktop
+    src: templates/gnome_desktop/com.alacritty.Alacritty.desktop
+    dest: /home/{{ local_user }}/.local/share/applications/com.alacritty.Alacritty.desktop
     owner: "{{ local_user }}"
     group: "{{ local_user }}"
     mode: "0644"
+
+- name: Remove legacy alacritty.desktop from previous provisions
+  ansible.builtin.file:
+    path: /home/{{ local_user }}/.local/share/applications/alacritty.desktop
+    state: absent
 
 - name: Drop legacy Alacritty.desktop cleanup cron (replaced by user overrides)
   ansible.builtin.cron:
@@ -133,4 +142,3 @@
     - org.gnome.Console.desktop
     - org.gnome.Ptyxis.desktop
     - kgx.desktop
-    - Alacritty.desktop
