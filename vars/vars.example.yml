@@ -16,6 +16,9 @@ local_user_passwordless_sudo: true
 enable_fail2ban: true
 enable_sshd: false
 
+# Subnet exempted from fail2ban (e.g. "192.168.1.0/24"). Empty = loopback only.
+local_network: ""
+
 # Extras
 install_packager: true
 install_printers: true

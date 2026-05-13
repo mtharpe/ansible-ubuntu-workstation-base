@@ -17,4 +17,4 @@
     group: root
     mode: "0644"
   notify: Restart fail2ban
-  when: enable_fail2ban | default(false)
+  when: enable_fail2ban | default(true)

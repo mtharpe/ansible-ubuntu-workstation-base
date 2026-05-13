@@ -14,5 +14,5 @@
     state: started
     enabled: true
   when:
-    - enable_fail2ban | default(false)
+    - enable_fail2ban | default(true)
     - not is_container | default(false)
