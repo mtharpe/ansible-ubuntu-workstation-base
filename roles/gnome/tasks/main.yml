@@ -164,3 +164,8 @@
   ansible.builtin.import_tasks: extensions.yml
   when: not is_container | default(false)
   tags: [gnome, extensions]
+
+- name: Install and enable local (hand-written) GNOME Shell extensions
+  ansible.builtin.import_tasks: local-extensions.yml
+  when: not is_container | default(false)
+  tags: [gnome, extensions, local-extensions]

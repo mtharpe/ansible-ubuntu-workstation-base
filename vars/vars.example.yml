@@ -53,6 +53,13 @@ gnome_extensions:
   - power-profile-switcher@fthx
   - auto-select-headset@krocg
 
+# Hand-written ("local") GNOME Shell extensions whose source trees live in
+# roles/gnome/files/local-extensions/<uuid>/. Synced + enabled by
+# roles/gnome/tasks/local-extensions.yml.
+gnome_local_extensions:
+  - silent-cycle-current-app@local
+  - chrome-pwa-grouper@local
+
 # python3
 ansible_python_interpreter: /usr/bin/python3
 
