@@ -43,7 +43,8 @@
       # alacritty.toml uses the [terminal] / [general] sections introduced in
       # 0.14. We install alacritty from ppa:aslatter/ppa in the third-party
       # alacritty role instead.
-      - vlc
+      - mpv
+      - celluloid
       - util-linux
       - nextcloud-desktop
       - gnome-extensions-app
@@ -82,6 +83,41 @@
       - vainfo
     state: present
   become: true
+
+# Keep ALSA output nodes from suspending. Intel SOF DSP (e.g. Lunar Lake) takes
+# several seconds to wake from suspend, which surfaces as a 3-6s audio dropout
+# when launching a media player after the device has been idle.
+- name: Ensure WirePlumber drop-in config directory exists
+  ansible.builtin.file:
+    path: /etc/wireplumber/wireplumber.conf.d
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+  become: true
+
+- name: Keep ALSA sinks awake (avoid SOF DSP wake delay)
+  ansible.builtin.copy:
+    dest: /etc/wireplumber/wireplumber.conf.d/50-keep-alsa-awake.conf
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      monitor.alsa.rules = [
+        {
+          matches = [
+            { node.name = "~alsa_output.*" }
+          ]
+          actions = {
+            update-props = {
+              session.suspend-timeout-seconds = 0
+            }
+          }
+        }
+      ]
+  become: true
+  # Picked up automatically on next login; no handler needed for a fresh
+  # workstation provisioning run.
 
 # Install OpenH264 codecs and plugins (best-effort: package availability varies by release)
 - name: Install OpenH264 codecs and plugins
@@ -192,6 +228,7 @@
       - gnome-maps
       - rhythmbox
       - totem
+      - vlc
       - gnome-tour
       - gnome-logs
     state: absent
