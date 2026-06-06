@@ -10,7 +10,7 @@ Configures an Ubuntu workstation with:
 
 - **Common packages** — developer tooling, fonts, multimedia codecs, system utilities (`roles/common`)
 - **Third-party apps** — Chrome, VS Code, Slack, Zoom, Docker, etc., gated by feature flags (`roles/third-party`). Each install removes any conflicting snap of the same package first, so the apt/deb version is the one that runs.
-- **GNOME settings** — sensible dconf defaults, system-wide dark mode that also reaches legacy GTK2 and Qt apps, workspace layout (`roles/gnome`)
+- **GNOME settings** — sensible dconf defaults, system-wide dark mode that also reaches legacy GTK2 and Qt apps, workspace layout, and custom keyboard shortcuts incl. screenshot-to-clipboard helpers (`gnome_custom_keybindings` in `vars/vars.yml`) (`roles/gnome`)
 - **Printing** — CUPS with broad driver coverage (Gutenprint/foomatic/HPLIP), the system-config-printer GUI, and automatic mDNS/IPP network printer discovery (`roles/common/tasks/printers.yml`)
 - **Shell setup** — bash or fish with TPM, Starship, FiraCode Nerd Font (toggle in `vars/vars.yml`)
 - **Hardening** — fail2ban with progressive bans (on by default), ufw desktop firewall, optional sshd hardening

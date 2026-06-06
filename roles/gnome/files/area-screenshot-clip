@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+# Area screenshot -> Wayland clipboard.
+# gnome-screenshot -c is unreliable on Wayland, so capture to a temp file
+# and push it to the clipboard with wl-copy instead.
+set -euo pipefail
+
+tmp="$(mktemp --suffix=.png)"
+trap 'rm -f "$tmp"' EXIT
+
+# -a: interactive area selection, -f: write to file (no clipboard flag)
+gnome-screenshot -a -f "$tmp"
+
+# Only copy if a selection was actually captured (user may cancel with Esc)
+if [ -s "$tmp" ]; then
+    wl-copy --type image/png < "$tmp"
+fi
