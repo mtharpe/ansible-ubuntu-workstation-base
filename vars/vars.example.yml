@@ -10,7 +10,6 @@
 # User
 local_user: tharpem
 local_user_email: mtharpe@noemail.not
-local_user_passwordless_sudo: true
 
 # Services
 enable_fail2ban: true
@@ -20,7 +19,6 @@ enable_sshd: false
 local_network: ""
 
 # Extras
-install_packager: true
 install_printers: true
 
 # Third party
