@@ -55,6 +55,10 @@
   ansible.builtin.import_tasks: claude.yml
   when: install_claude | default(false)
 
+- name: Setup Claude Desktop
+  ansible.builtin.import_tasks: claude-desktop.yml
+  when: install_claude_desktop | default(false)
+
 - name: Setup kubectl
   ansible.builtin.import_tasks: kubectl.yml
   when: install_kubectl | default(false)
