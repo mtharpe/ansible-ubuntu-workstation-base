@@ -1,0 +1,114 @@
+---
+# Claude Desktop has no official Linux build. This uses the community
+# aaddrick/claude-desktop-debian project, which repackages the official app and
+# serves GPG-signed .debs from an APT repo at pkg.claude-desktop-debian.dev, so
+# updates flow through `apt upgrade` like any other package.
+#
+# Cowork runs inside the app. Its default — and only currently tested —
+# isolation backend is bubblewrap (a user-namespace sandbox; no VM required).
+# Ubuntu 23.10+ ships apparmor_restrict_unprivileged_userns=1, which blocks the
+# unprivileged user namespaces bubblewrap relies on, so we also install an
+# AppArmor profile granting just /usr/bin/bwrap the userns capability
+# (upstream-recommended; see the project's docs/troubleshooting.md and
+# aaddrick/claude-desktop-debian#351). Without it, cowork's bubblewrap probe
+# fails and it falls back to running Claude Code directly on the host with NO
+# sandbox. The KVM/QEMU backend is opt-in and upstream-untested, so it is
+# intentionally not provisioned here. Run `claude-desktop --doctor` to see
+# which cowork backend is active.
+- name: Probe Claude Desktop apt repo
+  ansible.builtin.uri:
+    url: https://pkg.claude-desktop-debian.dev/dists/stable/Release
+    method: HEAD
+    status_code: [200, 301, 302]
+  register: claude_desktop_probe
+  failed_when: false
+  changed_when: false
+  tags: [third_party, claude-desktop]
+
+- name: Note unreachable Claude Desktop repo
+  ansible.builtin.debug:
+    msg: "Claude Desktop apt repo unreachable — skipping."
+  when: claude_desktop_probe.status | default(0) != 200
+  tags: [third_party, claude-desktop]
+
+- name: Fetch Claude Desktop signing key
+  ansible.builtin.get_url:
+    url: https://pkg.claude-desktop-debian.dev/KEY.gpg
+    dest: /tmp/claude-desktop-key.gpg
+    mode: '0644'
+    force: false
+  become: true
+  when: claude_desktop_probe.status | default(0) == 200
+  tags: [third_party, claude-desktop]
+
+- name: Install Claude Desktop signing key (dearmored)
+  ansible.builtin.shell:
+    cmd: gpg --dearmor < /tmp/claude-desktop-key.gpg > /usr/share/keyrings/claude-desktop.gpg
+    creates: /usr/share/keyrings/claude-desktop.gpg
+  become: true
+  when: claude_desktop_probe.status | default(0) == 200
+  tags: [third_party, claude-desktop]
+
+- name: Add Claude Desktop apt repository
+  ansible.builtin.copy:
+    dest: /etc/apt/sources.list.d/claude-desktop.list
+    owner: root
+    group: root
+    mode: '0644'
+    content: |
+      deb [signed-by=/usr/share/keyrings/claude-desktop.gpg arch=amd64,arm64] https://pkg.claude-desktop-debian.dev stable main
+  become: true
+  when: claude_desktop_probe.status | default(0) == 200
+  tags: [third_party, claude-desktop]
+
+- name: Install Claude Desktop
+  ansible.builtin.apt:
+    name: claude-desktop
+    state: present
+    update_cache: true
+  become: true
+  when: claude_desktop_probe.status | default(0) == 200
+  tags: [third_party, claude-desktop]
+
+- name: Install bubblewrap for the cowork sandbox backend
+  ansible.builtin.apt:
+    name: bubblewrap
+    state: present
+  become: true
+  when: claude_desktop_probe.status | default(0) == 200
+  tags: [third_party, claude-desktop, cowork]
+
+# Ubuntu 23.10+ blocks unprivileged user namespaces (apparmor_restrict_
+# unprivileged_userns=1), which stops bubblewrap from creating the namespace
+# cowork's sandbox needs. Grant /usr/bin/bwrap the userns capability via a
+# dedicated AppArmor profile — scoped to bwrap only, NOT a global sysctl
+# relaxation, and it restores bwrap's pre-23.10 behavior. Harmless on releases
+# without the restriction.
+- name: Allow bubblewrap user namespaces under AppArmor (cowork sandbox)
+  ansible.builtin.copy:
+    dest: /etc/apparmor.d/bwrap
+    owner: root
+    group: root
+    mode: '0644'
+    content: |
+      abi <abi/4.0>,
+      include <tunables/global>
+
+      profile bwrap /usr/bin/bwrap flags=(unconfined) {
+          userns,
+
+          include if exists <local/bwrap>
+      }
+  become: true
+  register: claude_bwrap_apparmor
+  when:
+    - claude_desktop_probe.status | default(0) == 200
+    - ansible_apparmor.status | default('disabled') == 'enabled'
+  tags: [third_party, claude-desktop, cowork]
+
+- name: Reload the bwrap AppArmor profile
+  ansible.builtin.command: apparmor_parser -r /etc/apparmor.d/bwrap
+  become: true
+  when: claude_bwrap_apparmor is changed
+  changed_when: true
+  tags: [third_party, claude-desktop, cowork]

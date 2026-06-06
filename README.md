@@ -74,6 +74,7 @@ All toggles live in `vars/vars.yml`. The most useful ones:
 | `install_gcloud` | `false` | Google Cloud SDK + kubectl |
 | `install_ansible` | `false` | Ansible (apt) for running playbooks locally |
 | `install_claude` | `true` | Claude Code CLI (official installer to `~/.local/bin`) |
+| `install_claude_desktop` | `true` | Claude Desktop + cowork (community APT repo; bubblewrap sandbox + AppArmor `userns` profile for bwrap) |
 | `install_kubectl` | `true` | kubectl from the official Kubernetes apt repo (`pkgs.k8s.io`) |
 | `install_multipass` | `true` | Multipass via snap (snap is the only Linux distribution channel) |
 | `install_fish` | `true` | Fish shell + Pure prompt + Fisher |

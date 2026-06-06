@@ -42,6 +42,7 @@ install_starship: false
 install_nerd_font: true
 install_eza: true
 install_claude: true
+install_claude_desktop: true
 install_kubectl: true
 install_multipass: true
 
