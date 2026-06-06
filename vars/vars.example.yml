@@ -60,6 +60,25 @@ gnome_local_extensions:
   - silent-cycle-current-app@local
   - chrome-pwa-grouper@local
 
+# Custom GNOME keyboard shortcuts, reproduced on every run so a fresh install
+# matches your existing setup. Each entry maps a key binding to a command.
+# The screenshot entries call helper scripts the gnome role installs to
+# ~/.local/bin (they capture to the Wayland clipboard via wl-copy). Leave the
+# list empty to skip custom shortcuts entirely.
+gnome_custom_keybindings:
+  - name: "1Password Quick Access"
+    binding: "<Shift><Control>space"
+    command: "/usr/bin/1password --quick-access"
+  - name: "Open File Manager"
+    binding: "<Super>e"
+    command: "nautilus --new-window"
+  - name: "Area Screenshot (to clipboard)"
+    binding: "<Shift><Alt>4"
+    command: "/home/{{ local_user }}/.local/bin/area-screenshot-clip"
+  - name: "Fullscreen Screenshot (to clipboard)"
+    binding: "<Shift><Alt>3"
+    command: "/home/{{ local_user }}/.local/bin/fullscreen-screenshot-clip"
+
 # python3
 ansible_python_interpreter: /usr/bin/python3
 
