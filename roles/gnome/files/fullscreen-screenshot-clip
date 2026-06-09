@@ -1,15 +1,4 @@
 #!/usr/bin/env bash
-# Full-screen screenshot -> Wayland clipboard.
-# gnome-screenshot -c is unreliable on Wayland, so capture to a temp file
-# and push it to the clipboard with wl-copy instead.
-set -euo pipefail
-
-tmp="$(mktemp --suffix=.png)"
-trap 'rm -f "$tmp"' EXIT
-
-# No -a: capture the whole screen. -f: write to file (no clipboard flag).
-gnome-screenshot -f "$tmp"
-
-if [ -s "$tmp" ]; then
-    wl-copy --type image/png < "$tmp"
-fi
+# Full-screen screenshot -> Wayland clipboard. Thin wrapper over the shared
+# portal-screenshot-clip core (the only capture path GNOME 50 permits).
+exec "$HOME/.local/bin/portal-screenshot-clip" --fullscreen

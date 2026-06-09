@@ -8,8 +8,12 @@
 - name: Install screenshot shortcut dependencies
   ansible.builtin.apt:
     name:
-      - gnome-screenshot   # capture backend used by the helper scripts
-      - wl-clipboard       # provides wl-copy for the Wayland clipboard
+      # gnome-screenshot is dead on GNOME 50 (the org.gnome.Shell.Screenshot
+      # D-Bus API now returns AccessDenied and it writes a 0-byte file), so the
+      # helper captures via the xdg-desktop-portal Screenshot interface instead.
+      - python3-gi                # PyGObject (Gio/GLib) for the portal D-Bus call
+      - xdg-desktop-portal-gnome  # GNOME backend implementing the Screenshot portal
+      - wl-clipboard              # provides wl-copy for the Wayland clipboard
     state: present
   become: true
   tags: [gnome, keybindings, screenshot]
@@ -33,8 +37,9 @@
     mode: "0755"
   become: true
   loop:
-    - area-screenshot-clip
-    - fullscreen-screenshot-clip
+    - portal-screenshot-clip      # shared core: drives the portal Screenshot call
+    - area-screenshot-clip        # wrapper -> core --interactive
+    - fullscreen-screenshot-clip  # wrapper -> core --fullscreen
   tags: [gnome, keybindings, screenshot]
 
 # Build the GVariant array of custom-keybinding paths (one per entry):
