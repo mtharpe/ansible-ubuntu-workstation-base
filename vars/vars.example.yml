@@ -21,6 +21,12 @@ local_network: ""
 # Extras
 install_printers: true
 
+# Desktop extras: GUI apps (nextcloud-desktop, celluloid, mpv, transmission),
+# GNOME configuration tools (dconf-editor, gnome-tweaks, gnome-extensions-app),
+# VA-API hardware video accel, GStreamer media codecs, WirePlumber ALSA config,
+# and Firefox/Thunderbird launcher hiding. Set false on headless / WSL boxes.
+install_desktop_extras: true
+
 # Third party
 install_chrome: true
 install_slack: true

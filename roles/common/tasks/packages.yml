@@ -15,7 +15,6 @@
       - build-essential
       - cmake
       - curl
-      - dconf-editor
       - ufw
       - golang
       - gh
@@ -33,25 +32,35 @@
       - speedtest-cli
       - sysstat
       - tmux
-      - transmission
       - neovim
       - python3-psutil
       - python3-pip
       - python3-termcolor
       - unzip
-      # alacritty intentionally NOT here: Ubuntu 24.04 ships 0.13.2, but our
-      # alacritty.toml uses the [terminal] / [general] sections introduced in
-      # 0.14. We install alacritty from ppa:aslatter/ppa in the third-party
-      # alacritty role instead.
+      - util-linux
+    state: present
+    cache_valid_time: 3600
+  become: true
+
+# Desktop-only extras: GUI apps + the GNOME configuration tooling.
+# alacritty intentionally NOT here: Ubuntu 24.04 ships 0.13.2, but our
+# alacritty.toml uses the [terminal] / [general] sections introduced in
+# 0.14. We install alacritty from ppa:aslatter/ppa in the third-party
+# alacritty role instead.
+- name: Install desktop extras
+  ansible.builtin.apt:
+    name:
+      - dconf-editor
+      - transmission
       - mpv
       - celluloid
-      - util-linux
       - nextcloud-desktop
       - gnome-extensions-app
       - gnome-tweaks
     state: present
     cache_valid_time: 3600
   become: true
+  when: install_desktop_extras | default(true)
 
 - name: Install 1Password (only if its apt repo was added)
   ansible.builtin.apt:
@@ -74,15 +83,23 @@
   become: true
   when: common_hashicorp_repo_available | default(false)
 
-# Install full ffmpeg (Ubuntu's universe ffmpeg replaces Fedora's swap dance)
-- name: Install ffmpeg and VA-API packages
+# Install full ffmpeg (Ubuntu's universe ffmpeg replaces Fedora's swap dance).
+# ffmpeg itself is CLI-useful; libva2/vainfo pull in the GPU stack for hardware
+# video accel, which is only meaningful on a desktop.
+- name: Install ffmpeg
+  ansible.builtin.apt:
+    name: ffmpeg
+    state: present
+  become: true
+
+- name: Install VA-API packages
   ansible.builtin.apt:
     name:
-      - ffmpeg
       - libva2
       - vainfo
     state: present
   become: true
+  when: install_desktop_extras | default(true)
 
 # Keep ALSA output nodes from suspending. Intel SOF DSP (e.g. Lunar Lake) takes
 # several seconds to wake from suspend, which surfaces as a 3-6s audio dropout
@@ -95,6 +112,7 @@
     group: root
     mode: "0755"
   become: true
+  when: install_desktop_extras | default(true)
 
 - name: Keep ALSA sinks awake (avoid SOF DSP wake delay)
   ansible.builtin.copy:
@@ -116,6 +134,7 @@
         }
       ]
   become: true
+  when: install_desktop_extras | default(true)
   # Picked up automatically on next login; no handler needed for a fresh
   # workstation provisioning run.
 
@@ -129,7 +148,9 @@
     state: present
   become: true
   failed_when: false
-  when: not is_container | default(false)
+  when:
+    - not is_container | default(false)
+    - install_desktop_extras | default(true)
 
 # Install podman only if docker is not requested
 - name: Install podman if docker is not enabled
@@ -158,6 +179,7 @@
     - fonts-terminus
   become: true
   failed_when: false
+  when: install_desktop_extras | default(true)
 
 # Optionally install a Nerd Font (FiraCode) for icons (starship, prompts)
 - name: Check if FiraCode Nerd Font is already installed
@@ -236,6 +258,7 @@
     autoremove: true
   become: true
   failed_when: false
+  when: install_desktop_extras | default(true)
 
 # Ubuntu ships Firefox and Thunderbird as snaps; the apt remove above is a
 # no-op for those, so shadow their .desktop files with NoDisplay overrides
@@ -249,6 +272,7 @@
     group: "{{ local_user }}"
     mode: "0755"
   become: true
+  when: install_desktop_extras | default(true)
 
 - name: Hide Firefox and Thunderbird launchers from GNOME Shell
   ansible.builtin.copy:
@@ -267,3 +291,4 @@
     - firefox-esr.desktop
     - thunderbird.desktop
     - thunderbird_thunderbird.desktop
+  when: install_desktop_extras | default(true)
