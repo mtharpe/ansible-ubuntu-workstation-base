@@ -1,7 +1,7 @@
 ---
 # WSL provisioning — same roles as the full workstation minus the gnome role,
 # since WSL has no GNOME session. Hardware/desktop-only tasks in the common
-# role auto-skip on WSL via the `is_wsl` fact set in roles/common/tasks/main.yml.
+# role auto-skip on WSL via the `common_is_wsl` fact set in roles/common/tasks/main.yml.
 - name: Setup WSL
   hosts: workstation
   become: true
@@ -15,4 +15,5 @@
     - third-party
 
   handlers:
-    - ansible.builtin.import_tasks: handlers/main.yml
+    - name: Import shared handlers
+      ansible.builtin.import_tasks: handlers/main.yml

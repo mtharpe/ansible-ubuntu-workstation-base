@@ -8,13 +8,13 @@
 #   ./run_wsl.sh
 #
 # Hardware/desktop tasks in the common role auto-skip on WSL via the
-# `is_wsl` fact — no toggle needed for zram, fstrim, ufw, or fail2ban.
+# `common_is_wsl` fact — no toggle needed for zram, fstrim, ufw, or fail2ban.
 
 # User
 local_user: tharpem
 local_user_email: mtharpe@noemail.not
 
-# Services — pointless on WSL, auto-skipped by is_wsl guards anyway
+# Services — pointless on WSL, auto-skipped by common_is_wsl guards anyway
 enable_fail2ban: false
 enable_sshd: false
 local_network: ""

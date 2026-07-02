@@ -19,7 +19,7 @@
     state: present
   become: true
   become_user: "{{ local_user }}"
-  when: not is_container | default(false)
+  when: not common_is_container | default(false)
   loop:
     - k: /org/gnome/desktop/interface/font-name
       v: "'Cantarell 11'"
@@ -38,7 +38,7 @@
     state: present
   become: true
   become_user: "{{ local_user }}"
-  when: not is_container | default(false)
+  when: not common_is_container | default(false)
   tags: [gnome]
   loop:
     - k: /org/gnome/desktop/interface/clock-format
@@ -147,7 +147,7 @@
   ansible.builtin.command: "gnome-extensions disable {{ item }}"
   become: true
   become_user: "{{ local_user }}"
-  when: not is_container | default(false)
+  when: not common_is_container | default(false)
   changed_when: false
   failed_when: false
   tags: [gnome]
@@ -157,22 +157,22 @@
 
 - name: Propagate dark mode to legacy toolkits (GTK2, Qt, GTK3 outside session)
   ansible.builtin.import_tasks: dark-mode.yml
-  when: not is_container | default(false)
+  when: not common_is_container | default(false)
   tags: [gnome, dark-mode]
 
 - name: Install and enable GNOME Shell extensions
   ansible.builtin.import_tasks: extensions.yml
-  when: not is_container | default(false)
+  when: not common_is_container | default(false)
   tags: [gnome, extensions]
 
 - name: Install and enable local (hand-written) GNOME Shell extensions
   ansible.builtin.import_tasks: local-extensions.yml
-  when: not is_container | default(false)
+  when: not common_is_container | default(false)
   tags: [gnome, extensions, local-extensions]
 
 - name: Reproduce custom keyboard shortcuts and screenshot helpers
   ansible.builtin.import_tasks: keybindings.yml
   when:
-    - not is_container | default(false)
+    - not common_is_container | default(false)
     - gnome_custom_keybindings | default([]) | length > 0
   tags: [gnome, keybindings]

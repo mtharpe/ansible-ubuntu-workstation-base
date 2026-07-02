@@ -30,8 +30,8 @@
 # play is running over, if invoked remotely.
 - name: Configure ufw
   when:
-    - not is_container | default(false)
-    - not is_wsl | default(false)
+    - not common_is_container | default(false)
+    - not common_is_wsl | default(false)
   block:
     - name: Ensure ufw is installed
       ansible.builtin.apt:

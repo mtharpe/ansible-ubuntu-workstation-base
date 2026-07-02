@@ -1,12 +1,12 @@
 ---
 - name: Detect container environment
   ansible.builtin.set_fact:
-    is_container: "{{ ansible_facts['virtualization_type'] | default('') in
+    common_is_container: "{{ ansible_facts['virtualization_type'] | default('') in
       ['container', 'docker', 'podman', 'lxc', 'systemd-nspawn', 'oci'] }}"
 
 - name: Detect WSL environment
   ansible.builtin.set_fact:
-    is_wsl: "{{ 'microsoft' in (ansible_facts['kernel'] | default('') | lower) }}"
+    common_is_wsl: "{{ 'microsoft' in (ansible_facts['kernel'] | default('') | lower) }}"
 
 - name: Setup Repos
   ansible.builtin.import_tasks: repos.yml

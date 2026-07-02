@@ -100,15 +100,8 @@
           include if exists <local/bwrap>
       }
   become: true
-  register: claude_bwrap_apparmor
+  notify: Reload bwrap AppArmor profile
   when:
     - claude_desktop_probe.status | default(0) == 200
     - ansible_apparmor.status | default('disabled') == 'enabled'
-  tags: [third_party, claude-desktop, cowork]
-
-- name: Reload the bwrap AppArmor profile
-  ansible.builtin.command: apparmor_parser -r /etc/apparmor.d/bwrap
-  become: true
-  when: claude_bwrap_apparmor is changed
-  changed_when: true
   tags: [third_party, claude-desktop, cowork]

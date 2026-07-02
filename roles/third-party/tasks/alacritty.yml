@@ -31,7 +31,7 @@
   become: true
   tags: [third_party, alacritty]
 
-- name: Install alacritty (from PPA)
+- name: Install alacritty (from PPA)  # noqa: package-latest
   ansible.builtin.apt:
     name: alacritty
     # `state: latest` (not `present`) so an already-installed apt-shipped

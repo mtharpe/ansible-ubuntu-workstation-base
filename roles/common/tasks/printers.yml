@@ -20,7 +20,7 @@
   become: true
   tags: [common, printers]
 
-- name: Add {{ local_user }} to lpadmin (manage printers without sudo)
+- name: Grant printer administration to {{ local_user }}
   ansible.builtin.user:
     name: "{{ local_user }}"
     groups: [lpadmin]
@@ -37,5 +37,5 @@
     - cups
     - cups-browsed
   become: true
-  when: not is_container | default(false)
+  when: not common_is_container | default(false)
   tags: [common, printers]

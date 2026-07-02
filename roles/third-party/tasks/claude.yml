@@ -25,9 +25,20 @@
   register: claude_bin_stat
   tags: [third_party, claude]
 
+- name: Download Claude Code installer script
+  ansible.builtin.get_url:
+    url: https://claude.ai/install.sh
+    dest: /tmp/claude-install.sh
+    mode: '0755'
+    force: true
+  when:
+    - claude_probe.status | default(0) == 200
+    - not claude_bin_stat.stat.exists
+  tags: [third_party, claude]
+
 - name: Install Claude Code via official installer
-  ansible.builtin.shell:
-    cmd: curl -fsSL https://claude.ai/install.sh | bash
+  ansible.builtin.command:
+    cmd: /bin/bash /tmp/claude-install.sh
     creates: "/home/{{ local_user }}/.local/bin/claude"
   become: true
   become_user: "{{ local_user }}"

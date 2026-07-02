@@ -19,4 +19,4 @@
   notify: Restart fail2ban
   when:
     - enable_fail2ban | default(true)
-    - not is_wsl | default(false)
+    - not common_is_wsl | default(false)

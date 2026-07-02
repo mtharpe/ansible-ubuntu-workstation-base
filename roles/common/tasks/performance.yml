@@ -24,8 +24,8 @@
     - { name: vm.dirty_background_ratio, value: '5' }
     - { name: kernel.sysrq, value: '1' }
   when:
-    - not is_container | default(false)
-    - not is_wsl | default(false)
+    - not common_is_container | default(false)
+    - not common_is_wsl | default(false)
 
 - name: Enable fstrim.timer for periodic SSD trim
   ansible.builtin.systemd:
@@ -34,8 +34,8 @@
     state: started
   become: true
   when:
-    - not is_container | default(false)
-    - not is_wsl | default(false)
+    - not common_is_container | default(false)
+    - not common_is_wsl | default(false)
   failed_when: false
 
 # zram: compressed RAM-backed swap. With zstd, ~3x compression effective,
@@ -47,8 +47,8 @@
     state: present
   become: true
   when:
-    - not is_container | default(false)
-    - not is_wsl | default(false)
+    - not common_is_container | default(false)
+    - not common_is_wsl | default(false)
 
 - name: Configure zram-generator
   ansible.builtin.copy:
@@ -64,19 +64,19 @@
       swap-priority = 100
       fs-type = swap
   become: true
-  register: zram_conf
+  register: common_zram_conf
   when:
-    - not is_container | default(false)
-    - not is_wsl | default(false)
+    - not common_is_container | default(false)
+    - not common_is_wsl | default(false)
 
 - name: Reload systemd to register zram units
   ansible.builtin.systemd:
     daemon_reload: true
   become: true
   when:
-    - not is_container | default(false)
-    - not is_wsl | default(false)
-    - zram_conf is changed
+    - not common_is_container | default(false)
+    - not common_is_wsl | default(false)
+    - common_zram_conf is changed
 
 - name: Activate zram swap now
   ansible.builtin.systemd:
@@ -84,8 +84,8 @@
     state: started
   become: true
   when:
-    - not is_container | default(false)
-    - not is_wsl | default(false)
+    - not common_is_container | default(false)
+    - not common_is_wsl | default(false)
   failed_when: false
 
 # Ubuntu-specific: disable services that slow boot or run background
@@ -102,6 +102,6 @@
     - NetworkManager-wait-online.service
     - motd-news.timer
   when:
-    - not is_container | default(false)
-    - not is_wsl | default(false)
+    - not common_is_container | default(false)
+    - not common_is_wsl | default(false)
   failed_when: false

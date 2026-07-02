@@ -9,14 +9,14 @@
   register: gnome_shell_ver
   changed_when: false
   failed_when: false
-  when: not is_container | default(false)
+  when: not common_is_container | default(false)
   tags: [gnome, extensions]
 
 - name: Set GNOME Shell major version fact
   ansible.builtin.set_fact:
     gnome_ext_shell_major: "{{ (gnome_shell_ver.stdout | regex_search('GNOME Shell ([0-9]+)', '\\1') | first) | default('') }}"
   when:
-    - not is_container | default(false)
+    - not common_is_container | default(false)
     - gnome_shell_ver.rc | default(1) == 0
   tags: [gnome, extensions]
 
@@ -29,7 +29,7 @@
   become_user: "{{ local_user }}"
   loop: "{{ gnome_extensions | default([]) }}"
   when:
-    - not is_container | default(false)
+    - not common_is_container | default(false)
     - gnome_ext_shell_major | default('') != ''
   tags: [gnome, extensions]
 
@@ -43,7 +43,7 @@
   loop_control:
     label: "{{ item.item | default('skipped') }}"
   when:
-    - not is_container | default(false)
+    - not common_is_container | default(false)
     - gnome_ext_shell_major | default('') != ''
     - item.rc | default(1) != 0
   tags: [gnome, extensions]
@@ -96,7 +96,7 @@
   become_user: "{{ local_user }}"
   loop: "{{ gnome_extensions | default([]) }}"
   when:
-    - not is_container | default(false)
+    - not common_is_container | default(false)
     - gnome_ext_shell_major | default('') != ''
   changed_when: false
   failed_when: false

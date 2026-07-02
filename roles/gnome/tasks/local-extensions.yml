@@ -52,7 +52,7 @@
   become: true
   become_user: "{{ local_user }}"
   loop: "{{ gnome_local_extensions | default([]) }}"
-  when: not is_container | default(false)
+  when: not common_is_container | default(false)
   changed_when: false
   failed_when: false
   tags: [gnome, extensions, local-extensions]

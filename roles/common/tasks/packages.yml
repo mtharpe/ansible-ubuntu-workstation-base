@@ -149,7 +149,7 @@
   become: true
   failed_when: false
   when:
-    - not is_container | default(false)
+    - not common_is_container | default(false)
     - install_desktop_extras | default(true)
 
 # Install podman only if docker is not requested

@@ -13,4 +13,5 @@
     - gnome
 
   handlers:
-    - ansible.builtin.import_tasks: handlers/main.yml
+    - name: Import shared handlers
+      ansible.builtin.import_tasks: handlers/main.yml
