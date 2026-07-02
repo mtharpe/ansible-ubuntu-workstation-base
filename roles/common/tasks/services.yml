@@ -7,6 +7,7 @@
   when:
     - enable_sshd | default(false)
     - not is_container | default(false)
+    - not is_wsl | default(false)
 
 - name: Start and enable fail2ban
   ansible.builtin.service:
@@ -16,3 +17,4 @@
   when:
     - enable_fail2ban | default(true)
     - not is_container | default(false)
+    - not is_wsl | default(false)
